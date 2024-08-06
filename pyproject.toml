@@ -36,3 +36,13 @@ markers = [
   "overnight: for tests that take hours to complete (deselect with '-m \"not overnight\"')",
   "serial"
 ]
+
+[tool.mypy]
+files = ["src"]
+ignore_missing_imports = true
+strict_optional = true
+allow_untyped_calls = false
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = false
+strict = true
