@@ -114,7 +114,7 @@ class SubTextIO(TextIO):
 
     def read(self, size: int = -1) -> str:
         if self._closed:
-            raise IOError("Closed.")
+            raise ValueError("I/O operation on closed file.")
 
         if size < 0 or size > self.length - self.position:
             size = self.length - self.position
@@ -125,7 +125,7 @@ class SubTextIO(TextIO):
 
     def readline(self, limit: int = -1) -> str:
         if self._closed:
-            raise IOError("Closed.")
+            raise ValueError("I/O operation on closed file.")
 
         if self.position >= self.length:
             return ''
@@ -152,7 +152,7 @@ class SubTextIO(TextIO):
         """
 
         if self._closed:
-            raise IOError("Closed.")
+            raise ValueError("I/O operation on closed file.")
 
         remaining_buffer = self._buffer[self.position:]
         lines = remaining_buffer.splitlines(keepends=True)
@@ -170,7 +170,7 @@ class SubTextIO(TextIO):
 
     def write(self, s: str) -> int:
         if self._closed:
-            raise IOError("Closed.")
+            raise ValueError("I/O operation on closed file.")
 
         pre = self._buffer[:self.position]
         post = self._buffer[self.position + len(s):]
@@ -188,7 +188,7 @@ class SubTextIO(TextIO):
 
     def truncate(self, size: Optional[int] = None) -> int:
         if self._closed:
-            raise IOError("Closed.")
+            raise ValueError("I/O operation on closed file.")
 
         if size is None:
             end = self.position
@@ -206,7 +206,7 @@ class SubTextIO(TextIO):
 
     def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
         if self._closed:
-            raise IOError("Closed.")
+            raise ValueError("I/O operation on closed file.")
 
         if whence == os.SEEK_SET:  # Absolute positioning
             target = offset
@@ -222,7 +222,7 @@ class SubTextIO(TextIO):
 
     def tell(self) -> int:
         if self._closed:
-            raise IOError("Closed.")
+            raise ValueError("I/O operation on closed file.")
 
         return self.position
 

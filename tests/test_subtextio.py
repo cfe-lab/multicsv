@@ -158,11 +158,11 @@ def test_long_write(base_textio):
 def test_operations_after_close(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     sub_text.close()
-    with pytest.raises(IOError):
+    with pytest.raises(ValueError):
         sub_text.read()
-    with pytest.raises(IOError):
+    with pytest.raises(ValueError):
         sub_text.write("Test")
-    with pytest.raises(IOError):
+    with pytest.raises(ValueError):
         sub_text.seek(1)
 
 # Test unexpected `whence` value in `seek`
