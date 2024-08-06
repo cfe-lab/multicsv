@@ -39,9 +39,9 @@ class SubTextIO(TextIO):
     --------------------
     - `read(size: int = -1) -> str`: Reads a specified number of
       characters from the buffer.
-    - `readline(limit: int = - 1) -> str`: Reads and returns one line
+    - `readline(limit: int = -1) -> str`: Reads and returns one line
       from the buffer.
-    - `readlines(hint: int = - 1) -> List[str]`: Reads and returns all
+    - `readlines(hint: int = -1) -> List[str]`: Reads and returns all
       remaining lines from the buffer.
     - `write(s: str) -> int`: Writes a string to the buffer.
     - `writelines(lines: List[str]) -> None`: Writes a list of lines
