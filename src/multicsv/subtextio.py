@@ -186,7 +186,7 @@ class SubTextIO(TextIO):
         for line in lines:
             self.write(line)
 
-    def truncate(self, size: Optional[int] = None) -> None:
+    def truncate(self, size: Optional[int] = None) -> int:
         if self._closed:
             raise IOError("Closed.")
 
@@ -197,6 +197,7 @@ class SubTextIO(TextIO):
 
         self.length = end
         self._buffer = self._buffer[:end]
+        return self.length
 
     def close(self) -> None:
         if not self._closed:
