@@ -1,46 +1,61 @@
 
 from typing import TextIO, List, Optional, Type
-from io import TextIOBase
 import os
 
 
 class SubTextIO(TextIO):
     """
-    SubTextIO provides an interface for reading, writing, and manipulating a specified subsection of
-    a base TextIO object. This class allows for convenient and isolated operations within a given range
-    of the base TextIO buffer, while efficiently buffering content to minimize repeated seeks.
+    SubTextIO provides an interface for reading, writing, and
+    manipulating a specified subsection of a base TextIO object. This
+    class allows for convenient and isolated operations within a given
+    range of the base TextIO buffer, while efficiently buffering
+    content to minimize repeated seeks.
 
     Purpose:
     --------
-    The primary aim of SubTextIO is to allow for editing, reading, and writing operations on a specific
-    segment of a TextIO object without affecting other parts. This can be particularly useful in scenarios
-    where parts of a large text file need to be updated or read independently.
+    The primary aim of SubTextIO is to allow for editing, reading, and
+    writing operations on a specific segment of a TextIO object
+    without affecting other parts. This can be particularly useful in
+    scenarios where parts of a large text file need to be updated or
+    read independently.
 
     Structure:
     ----------
-    - The class initializes by reading and storing the relevant segment of the base TextIO into an in-memory buffer.
+    - The class initializes by reading and storing the relevant
+      segment of the base TextIO into an in-memory buffer.
     - Operations (read, write, seek, etc.) are done on this buffer.
-    - Changes are committed back to the base TextIO when the `flush` or `close` method is called.
+    - Changes are committed back to the base TextIO when the `flush`
+      or `close` method is called.
 
     Use Cases:
     ----------
-    - Editing a specific section of a configuration file or log without loading the entire file.
+    - Editing a specific section of a configuration file or log
+      without loading the entire file.
     - Concurrent processing on different segments of a large file.
-    - Efficiently managing memory and I/O operations for large-scale text processing tasks.
+    - Efficiently managing memory and I/O operations for large-scale
+      text processing tasks.
 
     Interface Functions:
     --------------------
-    - `read(size: int = -1) -> str`: Reads a specified number of characters from the buffer.
+    - `read(size: int = -1) -> str`: Reads a specified number of
+      characters from the buffer.
     - `readline() -> str`: Reads and returns one line from the buffer.
-    - `readlines() -> List[str]`: Reads and returns all remaining lines from the buffer.
+    - `readlines() -> List[str]`: Reads and returns all remaining
+      lines from the buffer.
     - `write(s: str) -> int`: Writes a string to the buffer.
-    - `writelines(lines: List[str]) -> None`: Writes a list of lines to the buffer.
-    - `delete_section() -> None`: Deletes the entire content of the subsection's buffer.
-    - `seek(offset: int, whence: int = 0) -> int`: Moves the buffer's current position.
+    - `writelines(lines: List[str]) -> None`: Writes a list of lines
+      to the buffer.
+    - `delete_section() -> None`: Deletes the entire content of the
+      subsection's buffer.
+    - `seek(offset: int, whence: int = 0) -> int`: Moves the buffer's
+      current position.
     - `tell() -> int`: Returns the current position in the buffer.
-    - `flush() -> None`: Writes the buffer content back to the base TextIO object.
-    - `close() -> None`: Flushes the buffer and closes the base TextIO object.
-    - Context Management Support: Allows for usage with `with` statement for automatic resource management.
+    - `flush() -> None`: Writes the buffer content back to the base
+      TextIO object.
+    - `close() -> None`: Flushes the buffer and closes the base TextIO
+      object.
+    - Context Management Support: Allows for usage with `with`
+      statement for automatic resource management.
 
     Examples:
     ---------
@@ -51,28 +66,37 @@ class SubTextIO(TextIO):
     base_text = io.StringIO("Hello\nWorld\nThis\nIs\nA\nTest\n")
     sub_text = SubTextIO(base_text, start=6, end=21)
 
-    print("Reading first line:", sub_text.readline())  # Should output 'World\n'
-    print("Reading rest within range:", sub_text.read())  # Should output 'This\nIs\n'
+    # Should output 'World\n'
+    print("Reading first line:", sub_text.readline())
+    # Should output 'This\nIs\n'
+    print("Reading rest within range:", sub_text.read())
 
     sub_text.seek(0)
     sub_text.write("NewContent")  # Overwrites 'World\nThis\n'
     sub_text.seek(0)
-    print("After write operation:", sub_text.read())  # Should output 'NewContentIs\n'
+    # Should output 'NewContentIs\n'
+    print("After write operation:", sub_text.read())
 
     sub_text.delete_section()
     sub_text.write("Overwritten")
     sub_text.seek(0)
-    print("After delete and write operation:", sub_text.read())  # Should output 'Overwritten'
+    # Should output 'Overwritten'
+    print("After delete and write operation:", sub_text.read())
 
-    sub_text.flush()  # Make sure changes are committed to the base TextIO
-    print("Base IO after SubTextIO flush:", base_text.getvalue())  # Should reflect changes in original buffer
+    # Make sure changes are committed to the base TextIO
+    sub_text.flush()
+    # Should reflect changes in original buffer
+    print("Base IO after SubTextIO flush:", base_text.getvalue())
     ```
 
     Caveats:
     --------
-    - Ensure that the range specified by `start` and `end` does not overlap unintended sections of the text.
-    - Be cautious of buffer size and memory usage when working with very large files.
-    - Always ensure to call `flush` or use context management to commit changes back to the base TextIO.
+    - Ensure that the range specified by `start` and `end` does not
+      overlap unintended sections of the text.
+    - Be cautious of buffer size and memory usage when working with
+      very large files.
+    - Always ensure to call `flush` or use context management to
+      commit changes back to the base TextIO.
     """
 
     def __init__(self, base_io: TextIO, start: int, end: int):
