@@ -129,14 +129,6 @@ class SubTextIO(TextIO):
     def encoding(self) -> str:
         return self.base_io.encoding
 
-    @property
-    def errors(self) -> Optional[str]:
-        return None
-
-    @property
-    def line_buffering(self) -> int:
-        return self.base_io.line_buffering
-
     def read(self, size: int = -1) -> str:
         if self._closed:
             raise OpOnClosedError("I/O operation on closed file.")
