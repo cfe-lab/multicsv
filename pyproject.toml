@@ -20,6 +20,10 @@ test = [
     "pytest>=6.0",
     "pytest-cov",
 ]
+dev = [
+    # Dependencies required for development (linting, type checking, etc.)
+    "flake8",
+]
 
 [tool.hatch.build.targets.sdist]
 include = [ "src/multicsv" ]
