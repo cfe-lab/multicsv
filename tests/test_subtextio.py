@@ -4,7 +4,7 @@ from typing import TextIO
 import pytest
 import os
 from multicsv.subtextio import SubTextIO
-from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates
+from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates, StartsBeyondBaseContent
 
 
 @pytest.fixture
@@ -369,13 +369,44 @@ def test_seekable(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     assert sub_text.seekable()
 
-@pytest.mark.parametrize("mode", ["r", "r+", "w+", "a+", "x+", "rt", "r+t", "w+t", "a+t", "x+t"])
-def test_mode(base_textio, mode):
+@pytest.mark.parametrize("mode", ["r", "w", "a", "x", "r+", "w+", "a+", "x+", "rt", "wt", "at", "xt", "r+t", "w+t", "a+t", "x+t"])
+def test_mode(mode):
     import tempfile
+
     with tempfile.NamedTemporaryFile(mode=mode) as tmp:
-        sub_text = SubTextIO(tmp, start=6, end=21)
-        assert sub_text.mode == mode
+        if tmp.readable():
+            sub_text = SubTextIO(tmp, start=0, end=21)
+            assert sub_text.mode == mode
+
+        else:
+            sub_text = SubTextIO(tmp, start=0, end=0)
+            assert sub_text.mode == mode
 
 def test_invalid_range(base_textio):
     with pytest.raises(InvalidSubtextCoordinates):
-        SubTextIO(base_textio, start=30, end=10)
+        SubTextIO(base_textio, start=15, end=10)
+
+def test_invalid_range_past_initial(base_textio):
+    with pytest.raises(StartsBeyondBaseContent):
+        SubTextIO(base_textio, start=30, end=40)
+
+def test_no_readable_requirement():
+    import tempfile
+
+    initial_content = "start of file | end of file"
+
+    with tempfile.NamedTemporaryFile(mode="w") as writer:
+        writer.write(initial_content)
+        writer.flush()
+
+        with open(writer.name, "r") as reader:
+            assert reader.read() == initial_content
+
+        assert not writer.readable()
+        current_pos = writer.tell()
+        with SubTextIO(writer, start=current_pos, end=current_pos) as sub_text:
+            sub_text.write(" | appendix")
+
+        assert not writer.readable()
+        with open(writer.name, "r") as reader:
+            assert reader.read() == initial_content + " | appendix"

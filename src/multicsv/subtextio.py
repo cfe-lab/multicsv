@@ -1,7 +1,10 @@
 from typing import TextIO, List, Optional, Type, Iterable
+import io
 import os
 from .exceptions import OpOnClosedError, \
-    InvalidWhenceError, InvalidSubtextCoordinates
+    InvalidWhenceError, InvalidSubtextCoordinates, \
+    BaseMustBeReadable, BaseMustBeSeakable, \
+    StartsBeyondBaseContent
 
 
 class SubTextIO(TextIO):
@@ -102,9 +105,18 @@ class SubTextIO(TextIO):
     """
 
     def __init__(self, base_io: TextIO, start: int, end: int):
-        if end < start:
+        if end < start or start < 0:
             raise InvalidSubtextCoordinates(
                 f"Invalid range [{start},{end}] passed to SubTextIO.")
+
+        if not base_io.seekable():
+            raise BaseMustBeSeakable("Base io must be seekable.")
+
+        if end > start and not base_io.readable():
+            # TODO: losen this requirement because if we override by
+            # the same length, then we dont need to read.
+            raise BaseMustBeReadable("Base io must be readable"
+                                     "if existing content is to be modified.")
 
         self.base_io = base_io
         self.start = start
@@ -120,16 +132,31 @@ class SubTextIO(TextIO):
         """
 
         base_initial_position = self.base_io.tell()
+
+        #
+        # Below we try to avoid calling `base_io.read()` as much as possible.
+        #
         try:
+            self.base_io.seek(0, os.SEEK_END)
+            base_last_position = self.base_io.tell()
+
+            if self.start > base_last_position:
+                raise StartsBeyondBaseContent(
+                    "Start position is greater than base TextIO length.")
+
             if self.end > self.start:
-                self.base_io.seek(self.start)
-                self._buffer = self.base_io.read(self.end - self.start)
+                self.base_io.seek(self.end)
                 base_final_position = self.base_io.tell()
-                self.base_io.seek(0, os.SEEK_END)
-                self.is_at_end = base_final_position == self.base_io.tell()
+                self.is_at_end = base_final_position == base_last_position
+
+                if self.end < base_last_position:
+                    self.base_io.seek(self.start)
+                    self._buffer = self.base_io.read(self.end - self.start)
+                else:
+                    self._buffer = ""
             else:
                 self._buffer = ""
-                base_final_position = base_initial_position
+                base_final_position = self.start
                 self.base_io.seek(0, os.SEEK_END)
                 self.is_at_end = base_final_position == self.base_io.tell()
         finally:
@@ -288,7 +315,7 @@ class SubTextIO(TextIO):
         return False
 
     def fileno(self) -> int:
-        return self.base_io.fileno()
+        raise io.UnsupportedOperation("Not a filesystem descriptor.")
 
     def readable(self) -> bool:
         return self.base_io.readable()
@@ -297,7 +324,7 @@ class SubTextIO(TextIO):
         return self.base_io.writable()
 
     def seekable(self) -> bool:
-        return self.base_io.seekable()
+        return True
 
     def __iter__(self) -> 'SubTextIO':
         return self

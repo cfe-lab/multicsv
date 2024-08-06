@@ -15,3 +15,15 @@ class InvalidWhenceError(SubTextIOErrror, ValueError):
 
 class InvalidSubtextCoordinates(SubTextIOErrror, ValueError):
     pass
+
+
+class BaseMustBeSeakable(SubTextIOErrror, ValueError):
+    pass
+
+
+class BaseMustBeReadable(SubTextIOErrror, ValueError):
+    pass
+
+
+class StartsBeyondBaseContent(SubTextIOErrror, ValueError):
+    pass
