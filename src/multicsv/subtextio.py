@@ -1,5 +1,5 @@
 
-from typing import TextIO, List, Optional, Type
+from typing import TextIO, List, Optional, Type, Iterable
 import os
 
 
@@ -182,7 +182,7 @@ class SubTextIO(TextIO):
         self.length = max(self.position, self.length)
         return written
 
-    def writelines(self, lines: List[str]) -> None:
+    def writelines(self, lines: Iterable[str]) -> None:
         for line in lines:
             self.write(line)
 
