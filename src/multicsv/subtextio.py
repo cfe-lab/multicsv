@@ -50,8 +50,7 @@ class SubTextIO(TextIO):
     - `write(s: str) -> int`: Writes a string to the buffer.
     - `writelines(lines: List[str]) -> None`: Writes a list of lines
       to the buffer.
-    - `delete_section() -> None`: Deletes the entire content of the
-      subsection's buffer.
+    - `truncate(size: int) -> int`: Resizes the section.
     - `seek(offset: int, whence: int = 0) -> int`: Moves the buffer's
       current position.
     - `tell() -> int`: Returns the current position in the buffer.
