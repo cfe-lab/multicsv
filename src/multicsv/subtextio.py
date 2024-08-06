@@ -1,4 +1,3 @@
-
 from typing import TextIO, List, Optional, Type, Iterable
 import os
 
@@ -115,6 +114,26 @@ class SubTextIO(TextIO):
     @property
     def mode(self) -> str:
         return self.base_io.mode
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    @property
+    def name(self) -> str:
+        return self.base_io.name
+
+    @property
+    def encoding(self) -> str:
+        return self.base_io.encoding
+
+    @property
+    def errors(self) -> Optional[str]:
+        return None
+
+    @property
+    def line_buffering(self) -> int:
+        return self.base_io.line_buffering
 
     def read(self, size: int = -1) -> str:
         if self._closed:
@@ -240,6 +259,21 @@ class SubTextIO(TextIO):
             self.base_io.seek(0)
             self.base_io.write(content_before + self._buffer + content_after)
             self.base_io.flush()
+
+    def isatty(self) -> bool:
+        return False
+
+    def fileno(self) -> int:
+        return self.base_io.fileno()
+
+    def readable(self) -> bool:
+        return self.base_io.readable()
+
+    def writable(self) -> bool:
+        return self.base_io.writable()
+
+    def seekable(self) -> bool:
+        return self.base_io.seekable()
 
     def __iter__(self) -> 'SubTextIO':
         return self

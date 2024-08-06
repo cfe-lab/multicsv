@@ -163,6 +163,17 @@ def test_long_write(base_textio):
     sub_text.seek(0)
     assert sub_text.read(len(long_text)) == long_text
 
+def test_closed(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.closed is False
+    sub_text.close()
+    assert sub_text.closed is True
+
+def test_closed_after_context(base_textio):
+    with SubTextIO(base_textio, start=6, end=21) as sub_text:
+        assert sub_text.closed is False
+    assert sub_text.closed is True
+
 # Test seek and read after close
 def test_operations_after_close(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
@@ -298,3 +309,40 @@ def test_readlines_with_huge_hint(base_textio):
 def test_readlines_with_zero_hint(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     assert sub_text.readlines(hint=0) == ["World,\n"]
+
+def test_encoding(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.encoding == base_textio.encoding
+
+def test_errors(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.errors is None
+
+def test_line_buffering(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert not sub_text.line_buffering
+
+def test_newlines(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.newlines is None
+
+def test_isatty(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert not sub_text.isatty()
+
+def test_fileno(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    with pytest.raises(io.UnsupportedOperation):
+        sub_text.fileno()
+
+def test_readable(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.readable()
+
+def test_writable(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.writable()
+
+def test_seekable(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.seekable()
