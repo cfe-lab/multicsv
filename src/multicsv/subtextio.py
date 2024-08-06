@@ -141,14 +141,32 @@ class SubTextIO(TextIO):
         self.position += len(result)
         return result
 
-    def readlines(self) -> List[str]:
+    def readlines(self, hint: int = -1) -> List[str]:
+        """
+        The `hint` argument in the `readlines` method of the `TextIO`
+        interface serves as a performance hint rather than a strict
+        limit. It indicates the approximate number of bytes to read
+        from the file. If the hint is positive, the implementation may
+        read more than the hint value to complete a line but will aim
+        to read at least as many bytes as specified by the hint.
+        """
+
         if self._closed:
             raise IOError("Closed.")
 
         remaining_buffer = self._buffer[self.position:]
         lines = remaining_buffer.splitlines(keepends=True)
-        self.position = self.length
-        return lines
+        read_size = 0
+        result = []
+
+        for line in lines:
+            result.append(line)
+            read_size += len(line)
+            if 0 <= hint <= read_size:
+                break
+
+        self.position += read_size
+        return result
 
     def write(self, s: str) -> int:
         if self._closed:

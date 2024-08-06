@@ -274,3 +274,18 @@ def test_readline_with_huge_limit(base_textio):
 def test_readline_with_zero_limit(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     assert sub_text.readline(limit=0) == ""
+
+def test_readlines_with_hint(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.readlines(hint=3) == ["World,\n"]
+    assert sub_text.readlines(hint=3) == ["this is "]
+    assert sub_text.readlines(hint=3) == []
+
+def test_readlines_with_huge_hint(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.readlines(hint=100) == ["World,\n", "this is "]
+    assert sub_text.readlines(hint=100) == []
+
+def test_readlines_with_zero_hint(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.readlines(hint=0) == ["World,\n"]
