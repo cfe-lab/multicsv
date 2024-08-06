@@ -73,6 +73,18 @@ def test_write_past_end(base_textio):
     base_textio.seek(0)
     assert base_textio.read() == f"Hello {longstring}a\ntest\n"
 
+def test_seek_values(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+
+    sub_text.seek(-3, whence=os.SEEK_END)
+    assert sub_text.readline() == "is "
+
+    sub_text.seek(+3, whence=os.SEEK_SET)
+    assert sub_text.readline() == "ld,\n"
+
+    sub_text.seek(+3, whence=os.SEEK_CUR)
+    assert sub_text.readline() == "s is "
+
 def test_writelines(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     sub_text.writelines(["Line1\n", "Line2\n"])
@@ -181,9 +193,17 @@ def test_operations_after_close(base_textio):
     with pytest.raises(ValueError):
         sub_text.read()
     with pytest.raises(ValueError):
+        sub_text.readline()
+    with pytest.raises(ValueError):
+        sub_text.readlines()
+    with pytest.raises(ValueError):
+        sub_text.truncate()
+    with pytest.raises(ValueError):
         sub_text.write("Test")
     with pytest.raises(ValueError):
-        sub_text.seek(1)
+        sub_text.seek(os.SEEK_CUR)
+    with pytest.raises(ValueError):
+        sub_text.tell()
 
 # Test unexpected `whence` value in `seek`
 def test_invalid_seek_whence(base_textio):
@@ -346,3 +366,10 @@ def test_writable(base_textio):
 def test_seekable(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     assert sub_text.seekable()
+
+@pytest.mark.parametrize("mode", ["r", "r+", "w+", "a+", "x+", "rt", "r+t", "w+t", "a+t", "x+t"])
+def test_mode(base_textio, mode):
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode=mode) as tmp:
+        sub_text = SubTextIO(tmp, start=6, end=21)
+        assert sub_text.mode == mode

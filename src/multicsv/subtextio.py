@@ -120,10 +120,6 @@ class SubTextIO(TextIO):
         return self._closed
 
     @property
-    def name(self) -> str:
-        return self.base_io.name
-
-    @property
     def encoding(self) -> str:
         return self.base_io.encoding
 
