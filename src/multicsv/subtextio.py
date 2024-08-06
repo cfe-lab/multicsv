@@ -39,9 +39,10 @@ class SubTextIO(TextIO):
     --------------------
     - `read(size: int = -1) -> str`: Reads a specified number of
       characters from the buffer.
-    - `readline() -> str`: Reads and returns one line from the buffer.
-    - `readlines() -> List[str]`: Reads and returns all remaining
-      lines from the buffer.
+    - `readline(limit: int = - 1) -> str`: Reads and returns one line
+      from the buffer.
+    - `readlines(hint: int = - 1) -> List[str]`: Reads and returns all
+      remaining lines from the buffer.
     - `write(s: str) -> int`: Writes a string to the buffer.
     - `writelines(lines: List[str]) -> None`: Writes a list of lines
       to the buffer.
@@ -122,7 +123,7 @@ class SubTextIO(TextIO):
         self.position += len(result)
         return result
 
-    def readline(self) -> str:
+    def readline(self, limit: int = -1) -> str:
         if self._closed:
             raise IOError("Closed.")
 
@@ -131,12 +132,13 @@ class SubTextIO(TextIO):
 
         newline_pos = self._buffer.find('\n', self.position)
         if newline_pos == -1 or newline_pos >= self.length:
-            result = self._buffer[self.position:]
-            self.position = self.length
-        else:
-            result = self._buffer[self.position:newline_pos + 1]
-            self.position = newline_pos + 1
+            newline_pos = self.length
 
+        if limit < 0 or limit > newline_pos - self.position:
+            limit = newline_pos - self.position + 1
+
+        result = self._buffer[self.position:self.position + limit]
+        self.position += len(result)
         return result
 
     def readlines(self) -> List[str]:

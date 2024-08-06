@@ -255,3 +255,22 @@ def test_iterate(base_textio):
     for line in sub_text:
         expected_line = next(actual_lines)
         assert line == expected_line
+
+def test_readline_with_limit(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.readline(limit=3) == "Wor"
+    assert sub_text.readline(limit=4) == "ld,\n"
+    assert sub_text.readline(limit=4) == "this"
+    assert sub_text.readline(limit=4) == " is "
+    assert sub_text.readline(limit=4) == ""
+    assert sub_text.readline(limit=4) == ""
+
+def test_readline_with_huge_limit(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.readline(limit=100) == "World,\n"
+    assert sub_text.readline(limit=100) == "this is "
+    assert sub_text.readline(limit=100) == ""
+
+def test_readline_with_zero_limit(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.readline(limit=0) == ""
