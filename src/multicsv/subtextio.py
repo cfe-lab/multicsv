@@ -115,7 +115,7 @@ class SubTextIO(TextIO):
         self.base_io.seek(self.start)
         self._buffer = self.base_io.read(self.end - self.start)
         self.length = len(self._buffer)
-        self._closed = False
+        self._closed = base_io.closed
 
     @property
     def mode(self) -> str:
