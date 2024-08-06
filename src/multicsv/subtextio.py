@@ -199,8 +199,8 @@ class SubTextIO(TextIO):
         else:
             end = size
 
-        self.length = end
         self._buffer = self._buffer[:end]
+        self.length = len(self._buffer)
         return self.length
 
     def close(self) -> None:

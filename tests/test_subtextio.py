@@ -100,6 +100,15 @@ test
 test
 """
 
+def test_truncate_past_end(base_textio):
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    sub_text.truncate(999)
+    assert base_textio.read() == """\
+a
+test
+"""
+    assert sub_text.length == 15 == 21 - 6
+
 def test_seek_tell(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     sub_text.seek(5)
