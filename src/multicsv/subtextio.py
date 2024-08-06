@@ -57,8 +57,7 @@ class SubTextIO(TextIO):
     - `tell() -> int`: Returns the current position in the buffer.
     - `flush() -> None`: Writes the buffer content back to the base
       TextIO object.
-    - `close() -> None`: Flushes the buffer and closes the base TextIO
-      object.
+    - `close() -> None`: Flushes the buffer and closes this IO object.
     - Context Management Support: Allows for usage with `with`
       statement for automatic resource management.
 
