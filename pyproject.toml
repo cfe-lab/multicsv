@@ -1,3 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multicsv"
+version = "0.0.1"
+description = "A Python library for handling multi-CSV format."
+readme = "README.md"
+license = "GPL-3.0"
+authors = [
+    { name = "British Columbia Centre for Excellence in HIV/AIDS", email = "vmysak@bccfe.ca" },
+]
+dependencies = []
+
+
+[project.optional-dependencies]
+test = [
+    # Dependencies required for running the test suite
+    "pytest>=6.0",
+    "pytest-cov",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [ "src/multicsv" ]
 
 [tool.pytest.ini_options]
 pythonpath = "src"
