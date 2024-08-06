@@ -116,7 +116,7 @@ class SubTextIO(TextIO):
             # TODO: losen this requirement because if we override by
             # the same length, then we dont need to read.
             raise BaseMustBeReadable("Base io must be readable"
-                                     "if existing content is to be modified.")
+                                     " if existing content is to be modified.")
 
         self.base_io = base_io
         self.start = start
