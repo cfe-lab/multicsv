@@ -11,3 +11,7 @@ class OpOnClosedError(SubTextIOErrror, ValueError):
 
 class InvalidWhenceError(SubTextIOErrror, ValueError):
     pass
+
+
+class InvalidSubtextCoordinates(SubTextIOErrror, ValueError):
+    pass

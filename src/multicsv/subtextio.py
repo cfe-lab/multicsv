@@ -1,6 +1,7 @@
 from typing import TextIO, List, Optional, Type, Iterable
 import os
-from .exceptions import OpOnClosedError, InvalidWhenceError
+from .exceptions import OpOnClosedError, \
+    InvalidWhenceError, InvalidSubtextCoordinates
 
 
 class SubTextIO(TextIO):
@@ -101,6 +102,10 @@ class SubTextIO(TextIO):
     """
 
     def __init__(self, base_io: TextIO, start: int, end: int):
+        if end < start:
+            raise InvalidSubtextCoordinates(
+                f"Invalid range [{start},{end}] passed to SubTextIO.")
+
         self.base_io = base_io
         self.start = start
         self.end = end
