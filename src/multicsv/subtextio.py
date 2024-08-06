@@ -112,6 +112,10 @@ class SubTextIO(TextIO):
         self.length = len(self._buffer)
         self._closed = False
 
+    @property
+    def mode(self) -> str:
+        return self.base_io.mode
+
     def read(self, size: int = -1) -> str:
         if self._closed:
             raise ValueError("I/O operation on closed file.")
