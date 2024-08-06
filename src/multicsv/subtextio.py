@@ -179,8 +179,7 @@ class SubTextIO(TextIO):
         return self.base_io.encoding
 
     def read(self, size: int = -1) -> str:
-        if self._closed:
-            raise OpOnClosedError("I/O operation on closed file.")
+        self._check_closed()
 
         if size < 0 or size > self.buffer_length - self.position:
             size = self.buffer_length - self.position
@@ -190,8 +189,7 @@ class SubTextIO(TextIO):
         return result
 
     def readline(self, limit: int = -1) -> str:
-        if self._closed:
-            raise OpOnClosedError("I/O operation on closed file.")
+        self._check_closed()
 
         if self.position >= self.buffer_length:
             return ''
@@ -217,8 +215,7 @@ class SubTextIO(TextIO):
         to read at least as many bytes as specified by the hint.
         """
 
-        if self._closed:
-            raise OpOnClosedError("I/O operation on closed file.")
+        self._check_closed()
 
         remaining_buffer = self._buffer[self.position:]
         lines = remaining_buffer.splitlines(keepends=True)
@@ -235,8 +232,7 @@ class SubTextIO(TextIO):
         return result
 
     def write(self, s: str) -> int:
-        if self._closed:
-            raise OpOnClosedError("I/O operation on closed file.")
+        self._check_closed()
 
         pre = self._buffer[:self.position]
         post = self._buffer[self.position + len(s):]
@@ -252,8 +248,7 @@ class SubTextIO(TextIO):
             self.write(line)
 
     def truncate(self, size: Optional[int] = None) -> int:
-        if self._closed:
-            raise OpOnClosedError("I/O operation on closed file.")
+        self._check_closed()
 
         if size is None:
             end = self.position
@@ -271,8 +266,7 @@ class SubTextIO(TextIO):
                 self._closed = True
 
     def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
-        if self._closed:
-            raise OpOnClosedError("I/O operation on closed file.")
+        self._check_closed()
 
         if whence == os.SEEK_SET:  # Absolute positioning
             target = offset
@@ -288,9 +282,7 @@ class SubTextIO(TextIO):
         return self.position
 
     def tell(self) -> int:
-        if self._closed:
-            raise OpOnClosedError("I/O operation on closed file.")
-
+        self._check_closed()
         return self.position
 
     def flush(self) -> None:
@@ -300,14 +292,14 @@ class SubTextIO(TextIO):
                 if self.buffer_length == self.initial_length or self.is_at_end:
                     self.base_io.seek(self.start)
                     self.base_io.write(self._buffer)
-                    self.base_io.flush()
                 else:
                     self.base_io.seek(self.end)
                     content_after = self.base_io.read()
 
                     self.base_io.seek(self.start)
                     self.base_io.write(self._buffer + content_after)
-                    self.base_io.flush()
+
+                self.base_io.flush()
             finally:
                 self.base_io.seek(base_initial_position)
 
@@ -325,6 +317,14 @@ class SubTextIO(TextIO):
 
     def seekable(self) -> bool:
         return True
+
+    def _check_closed(self) -> None:
+        """
+        Helper method to verify if the IO object is closed.
+        """
+
+        if self._closed:
+            raise OpOnClosedError("I/O operation on closed file.")
 
     def __iter__(self) -> 'SubTextIO':
         return self
