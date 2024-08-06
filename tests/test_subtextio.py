@@ -4,6 +4,8 @@ from typing import TextIO
 import pytest
 import os
 from multicsv.subtextio import SubTextIO
+from multicsv.exceptions import OpOnClosedError, InvalidWhenceError
+
 
 @pytest.fixture
 def base_textio() -> TextIO:
@@ -190,25 +192,25 @@ def test_closed_after_context(base_textio):
 def test_operations_after_close(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
     sub_text.close()
-    with pytest.raises(ValueError):
+    with pytest.raises(OpOnClosedError):
         sub_text.read()
-    with pytest.raises(ValueError):
+    with pytest.raises(OpOnClosedError):
         sub_text.readline()
-    with pytest.raises(ValueError):
+    with pytest.raises(OpOnClosedError):
         sub_text.readlines()
-    with pytest.raises(ValueError):
+    with pytest.raises(OpOnClosedError):
         sub_text.truncate()
-    with pytest.raises(ValueError):
+    with pytest.raises(OpOnClosedError):
         sub_text.write("Test")
-    with pytest.raises(ValueError):
+    with pytest.raises(OpOnClosedError):
         sub_text.seek(os.SEEK_CUR)
-    with pytest.raises(ValueError):
+    with pytest.raises(OpOnClosedError):
         sub_text.tell()
 
 # Test unexpected `whence` value in `seek`
 def test_invalid_seek_whence(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=21)
-    with pytest.raises(ValueError):
+    with pytest.raises(InvalidWhenceError):
         sub_text.seek(0, whence=3)
 
 # Test `flush` without any open/close
