@@ -1,5 +1,5 @@
 
-from typing import Union, Literal
+from typing import Union, Literal, TextIO
 import os
 
 from .file import MultiCSVFile
@@ -16,3 +16,7 @@ def multicsv_open(path: OpenPath,
 
     file = open(path, mode=mode)
     return MultiCSVFile(file, own=True)
+
+
+def multicsv_wrap(file: TextIO) -> MultiCSVFile:
+    return MultiCSVFile(file)
