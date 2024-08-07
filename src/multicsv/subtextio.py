@@ -151,13 +151,10 @@ class SubTextIO(TextIO):
                 base_final_position = self._base_io.tell()
                 self.is_at_end = base_final_position == base_last_position
 
-                if self.end < base_last_position:
+                if self.end <= base_last_position:
                     self._base_io.seek(self.start)
                     self._buffer = self._base_io.read(self.end - self.start)
-                else:
-                    self._buffer = ""
             else:
-                self._buffer = ""
                 base_final_position = self.start
                 self._base_io.seek(0, os.SEEK_END)
                 self.is_at_end = base_final_position == self._base_io.tell()
@@ -296,6 +293,9 @@ class SubTextIO(TextIO):
         return self._position
 
     def flush(self) -> None:
+        if self._base_io.closed:
+            raise BaseIOClosed("Base io is closed in flush.")
+
         if not self._closed:
             base_initial_position = self._base_io.tell()
             try:

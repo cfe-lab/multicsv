@@ -34,6 +34,26 @@ def test_read_2(base_textio):
     assert sub_text.read() == ""
     assert sub_text.read() == ""
 
+def test_read_when_ended(base_textio):
+    assert base_textio.read()
+    assert not base_textio.read()
+    assert not base_textio.read()
+
+    sub_text = SubTextIO(base_textio, start=6, end=21)
+    assert sub_text.read() == "World,\nthis is "
+    assert sub_text.read() == ""
+    assert sub_text.read() == ""
+    assert sub_text.read() == ""
+
+def test_read_at_end(base_textio):
+    initial_content = base_textio.read()
+    assert initial_content
+    end = base_textio.tell()
+    base_textio.seek(0)
+
+    sub_text = SubTextIO(base_textio, start=6, end=end)
+    assert sub_text.read() == initial_content[6:]
+
 def test_readline_1(base_textio):
     sub_text = SubTextIO(base_textio, start=6, end=15)
     assert sub_text.readline() == "World,\n"
