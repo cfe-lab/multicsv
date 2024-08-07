@@ -106,9 +106,10 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
     directly may cause inconsistencies.
     """
 
-    def __init__(self, file: TextIO):
+    def __init__(self, file: TextIO, own: bool = False):
         self._initialized = False
         self._need_flush = False
+        self._own_file = own
         self._file = file
         self._closed = self._file.closed
         self._sections: List[MultiCSVSection] = []
@@ -178,7 +179,13 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             try:
                 self.flush()
             finally:
-                self._closed = True
+                if self._own_file:
+                    try:
+                        self._file.close()
+                    finally:
+                        self._closed = True
+                else:
+                    self._closed = True
 
     def _write_section(self, section: MultiCSVSection) -> None:
         self._file.write(f"[{section.name}]\n")
