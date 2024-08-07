@@ -2,7 +2,7 @@ import io
 import pytest
 from typing import TextIO
 from multicsv.file import MultiCSVFile
-from multicsv.exceptions import SectionNotFound, CSVFileBaseIOClosed
+from multicsv.exceptions import SectionNotFound, CSVFileBaseIOClosed, OpOnClosedCSVFileError
 
 
 @pytest.fixture
@@ -189,3 +189,26 @@ def test_various_initial_contents(initial_content, expected_sections):
     file = io.StringIO(initial_content)
     csv_file = MultiCSVFile(file)
     assert list(iter(csv_file)) == expected_sections
+
+
+def test_op_on_closed(simple_csv):
+    csv_file = MultiCSVFile(simple_csv)
+
+    assert csv_file["section1"]
+    csv_file.close()
+
+    with pytest.raises(OpOnClosedCSVFileError):
+        csv_file["section1"]
+
+    csv_file.close()
+
+    with pytest.raises(OpOnClosedCSVFileError):
+        csv_file["section1"]
+
+
+def test_op_on_closed_via_context(simple_csv):
+    with MultiCSVFile(simple_csv) as csv_file:
+        assert csv_file["section1"]
+
+    with pytest.raises(OpOnClosedCSVFileError):
+        csv_file["section1"]

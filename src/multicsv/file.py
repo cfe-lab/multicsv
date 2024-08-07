@@ -115,6 +115,8 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         self._initialized = True
 
     def __getitem__(self, key: str) -> TextIO:
+        self._check_closed()
+
         for item in self._sections:
             if item.name == key:
                 return item.descriptor
@@ -123,6 +125,8 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                               f"have section named {key!r}.")
 
     def __setitem__(self, key: str, value: TextIO) -> None:
+        self._check_closed()
+
         def make_section() -> MultiCSVSection:
             return MultiCSVSection(name=key, descriptor=value)
 
@@ -134,6 +138,8 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         self._sections.append(make_section())
 
     def __delitem__(self, key: str) -> None:
+        self._check_closed()
+
         found = None
         for i, item in enumerate(self._sections):
             if item.name == key:
@@ -147,12 +153,16 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             del self._sections[i]
 
     def __iter__(self) -> Iterator[str]:
+        self._check_closed()
+
         return iter(map(lambda x: x.name, self._sections))
 
     def __len__(self) -> int:
         return len(self._sections)
 
     def __contains__(self, key: object) -> bool:
+        self._check_closed()
+
         for item in self._sections:
             if item.name == key:
                 return True
