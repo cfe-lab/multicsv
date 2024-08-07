@@ -4,7 +4,7 @@ import os
 from .exceptions import OpOnClosedError, \
     InvalidWhenceError, InvalidSubtextCoordinates, \
     BaseMustBeReadable, BaseMustBeSeakable, \
-    StartsBeyondBaseContent, BaseIOClosed
+    EndsBeyondBaseContent, BaseIOClosed
 
 
 class SubTextIO(TextIO):
@@ -142,18 +142,16 @@ class SubTextIO(TextIO):
             self._base_io.seek(0, os.SEEK_END)
             base_last_position = self._base_io.tell()
 
-            if self.start > base_last_position:
-                raise StartsBeyondBaseContent(
-                    "Start position is greater than base TextIO length.")
+            if self.end > base_last_position:
+                raise EndsBeyondBaseContent(
+                    "End position is greater than base TextIO length.")
 
             if self.end > self.start:
                 self._base_io.seek(self.end)
                 base_final_position = self._base_io.tell()
                 self.is_at_end = base_final_position == base_last_position
-
-                if self.end <= base_last_position:
-                    self._base_io.seek(self.start)
-                    self._buffer = self._base_io.read(self.end - self.start)
+                self._base_io.seek(self.start)
+                self._buffer = self._base_io.read(self.end - self.start)
             else:
                 base_final_position = self.start
                 self._base_io.seek(0, os.SEEK_END)

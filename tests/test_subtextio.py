@@ -4,7 +4,7 @@ from typing import TextIO
 import pytest
 import os
 from multicsv.subtextio import SubTextIO
-from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates, StartsBeyondBaseContent
+from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates, EndsBeyondBaseContent
 
 
 @pytest.fixture
@@ -394,7 +394,10 @@ def test_mode(mode):
     import tempfile
 
     with tempfile.NamedTemporaryFile(mode=mode) as tmp:
-        if tmp.readable():
+        if tmp.writable():
+            tmp.truncate(30)
+
+        if tmp.readable() and tmp.writable():
             sub_text = SubTextIO(tmp, start=0, end=21)
             assert sub_text.mode == mode
 
@@ -407,8 +410,8 @@ def test_invalid_range(base_textio):
         SubTextIO(base_textio, start=15, end=10)
 
 def test_invalid_range_past_initial(base_textio):
-    with pytest.raises(StartsBeyondBaseContent):
-        SubTextIO(base_textio, start=30, end=40)
+    with pytest.raises(EndsBeyondBaseContent):
+        SubTextIO(base_textio, start=5, end=40)
 
 def test_no_readable_requirement():
     import tempfile
