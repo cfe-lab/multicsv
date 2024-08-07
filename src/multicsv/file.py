@@ -204,9 +204,6 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         if not self._need_flush:
             return
 
-        if self._closed:
-            return
-
         initial_file_pos = self._file.tell()
         try:
             self._write_file()
