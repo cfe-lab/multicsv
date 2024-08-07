@@ -8,9 +8,8 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cfe-lab/multicsv/pulls)
 
 Python library `multicsv` is designed for handling multi-CSV format
-files, most commonly known for usage in Illumina-MiSeq sample sheet
-files. This library provides an interface for reading, writing, and
-manipulating sections of a CSV file as individual text file objects.
+files. It provides an interface for reading, writing, and manipulating
+sections of a CSV file as individual text file objects.
 
 ### Key Features
 
@@ -31,6 +30,8 @@ The multi-CSV format is an extension of the traditional CSV
 (Comma-Separated Values) format that supports dividing a single file
 into multiple independent sections. Each section is demarcated by a
 header enclosed in square brackets, e.g., `[section_name]`.
+This format is commonly known for usage in Illumina-MiSeq sample sheet
+files.
 
 Conceptually, this file format provides the ability to store a whole
 SQL database in a single, human readable file.
@@ -54,9 +55,7 @@ In the example above, the file contains two sections: `section1` and
 
 ## Usage
 
-### Basic Example
-
-Here's a quick example of how to use the MultiCSV library:
+Here's a quick example of how to use the `multicsv` library:
 
 ```python
 import csv
@@ -71,11 +70,10 @@ with multicsv.open('example.csv', mode='w+') as csv_file:
     csv_reader = csv.reader(csv_file['section1'])
     assert list(csv_reader) == [['header1', 'header2', 'header3'],
                                 ['value1', 'value2', 'value3']]
-
-    # Get all sections:
-    all_sections = list(csv_file)
-    assert ['section1', 'section2'] == all_sections
 ```
+
+There are only two methods exported in `multicsv`: `open` and `wrap`.
+This is how the latter one is meant to be used:
 
 ```python
 import io
@@ -115,6 +113,18 @@ print(csv_content.read())
 # [section3]
 # g,h,i
 # 7,8,9
+```
+
+Both exported methods return a `MultiCSVFile` object.
+Objects of that class are `MutableMapping`s from names of sections (`: str`) to contents of sections (`: TextIO`).
+
+So, for instance, this is how to print all sections in a multi-csv file:
+
+```python
+import multicsv
+
+for section in multicsv.open("example.csv"):
+    print(section)
 ```
 
 ## Installation
