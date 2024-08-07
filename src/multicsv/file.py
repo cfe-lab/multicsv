@@ -9,6 +9,103 @@ from .section import MultiCSVSection
 
 
 class MultiCSVFile(MutableMapping[str, TextIO]):
+    """
+    MultiCSVFile provides an interface for reading, writing, and manipulating
+    sections of a CSV file as individual TextIO objects. This class allows for
+    convenient management of multiple independent sections within a single CSV
+    file.
+
+    Purpose:
+    --------
+    The primary aim of MultiCSVFile is to facilitate operations on
+    distinct segments of a CSV file, allowing each segment to be
+    treated as a TextIO object. This is particularly useful for
+    handling CSV files structured with multiple sections, such as
+    those containing configuration data, structured logs, or
+    segment-wise data.
+
+    Structure:
+    ----------
+    - The class initializes by reading the CSV file and identifying sections
+    encapsulated within bracketed headers (e.g., [section_name]).
+    - Each section is represented by a MultiCSVSection that holds a
+    descriptor to a SubTextIO object, allowing isolated operations
+    within that section.
+    - Operations like reading, writing, iterating, and deleting sections are
+    supported.
+    - Changes in sections are committed back to the base CSV file when
+    the `flush` or `close` method is invoked.
+
+    Use Cases:
+    ----------
+    - Efficient handling of configuration files with multiple
+      independent segments.
+    - Structured log files where each segment represents a distinct
+      log category.
+    - Processing large CSV files by logically splitting them into independent
+    sections for easier manipulation.
+
+    Interface Functions:
+    --------------------
+    - `__getitem__(key: str) -> TextIO`: Retrieves the TextIO object for the
+    specified section.
+    - `__setitem__(key: str, value: TextIO) -> None`: Sets the TextIO
+    object for the specified section.
+    - `__delitem__(key: str) -> None`: Deletes the specified section.
+    - `__iter__() -> Iterator[str]`: Iterates over the section names.
+    - `__len__() -> int`: Returns the number of sections.
+    - `__contains__(key: object) -> bool`: Checks if a specific section exists.
+    - `close() -> None`: Closes the MultiCSVFile and flushes any
+      uncommitted changes.
+    - `flush() -> None`: Commits changes in sections back to the base CSV file.
+    - Context Management Support: Allows for usage with `with` statement for
+    automatic resource management.
+
+    Examples:
+    ---------
+    ```python
+    import io
+    from multicsv.multicsvfile import MultiCSVFile
+
+    # Initialize the MultiCSVFile with a base CSV string
+    csv_content = io.StringIO("[section1]\na,b,c\n1,2,3\n"
+                              "[section2]\nd,e,f\n4,5,6\n")
+    csv_file = MultiCSVFile(csv_content)
+
+    # Accessing a section
+    section1 = csv_file["section1"]
+    print(section1.read())  # Should output 'a,b,c\n1,2,3\n'
+
+    # Adding a new section
+    new_section = io.StringIO("g,h,i\n7,8,9\n")
+    csv_file["section3"] = new_section
+    csv_file.flush()
+
+    # Verify the new section is added
+    csv_content.seek(0)
+    print(csv_content.read())
+    # Outputs
+    # [section1]
+    # a,b,c
+    # 1,2,3
+    # [section2]
+    # d,e,f
+    # 4,5,6
+    # [section3]
+    # g,h,i
+    # 7,8,9
+    ```
+
+    Caveats:
+    --------
+    - Writing to and reading from the base TextIO when it is used in
+    MultiCSVFile can lead to unexpected results.
+    - Always ensure to call `flush` or use context management to commit changes
+    back to the base CSV file.
+    - Mixing reading/writing operations from MultiCSVFile and the base TextIO
+    directly may cause inconsistencies.
+    """
+
     def __init__(self, file: TextIO):
         self._initialized = False
         self._file = file
