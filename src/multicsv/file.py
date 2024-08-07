@@ -166,6 +166,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         for item in self._sections:
             if item.name == key:
                 return True
+
         return False
 
     def close(self) -> None:
