@@ -268,7 +268,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             row = line.split(",")
 
             if row:
-                first = row[0]
+                first = row[0].strip()
                 rest = row[1:]
 
                 if first.startswith("[") and \
