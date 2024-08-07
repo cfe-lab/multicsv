@@ -58,3 +58,32 @@ def test_write_csv(example_file):
         # Get all sections:
         all_sections = list(csv_file)
         assert ['section1', 'section2'] == all_sections
+
+
+def test_open_csv():
+    # Initialize the MultiCSVFile with a base CSV string
+    csv_content = io.StringIO("[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n")
+    csv_file = multicsv.wrap(csv_content)
+
+    # Accessing a section
+    section1 = csv_file["section1"]
+    assert section1.read() == "a,b,c\n1,2,3\n"
+
+    # Adding a new section
+    new_section = io.StringIO("g,h,i\n7,8,9\n")
+    csv_file["section3"] = new_section
+    csv_file.flush()
+
+    # Verify the new section is added
+    csv_content.seek(0)
+    assert csv_content.read() == """\
+[section1]
+a,b,c
+1,2,3
+[section2]
+d,e,f
+4,5,6
+[section3]
+g,h,i
+7,8,9
+"""
