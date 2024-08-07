@@ -62,7 +62,7 @@ Here's a quick example of how to use the MultiCSV library:
 import csv
 import multicsv
 
-with multicsv.open(example_file, mode='w+') as csv_file:
+with multicsv.open('example.csv', mode='w+') as csv_file:
     # Write the CSV content to the file
     csv_file.section('section1').write("header1,header2,header3\nvalue1,value2,value3\n")
     csv_file.section('section2').write("header4,header5,header6\nvalue4,value5,value6\n")
