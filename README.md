@@ -7,9 +7,7 @@
 [![License - GPL3](https://img.shields.io/badge/license-GPLv3-blue)](https://spdx.org/licenses/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/cfe-lab/multicsv/pulls)
 
-## Overview
-
-MultiCSV is a Python library designed for handling multi-CSV format
+Python library `multicsv` is designed for handling multi-CSV format
 files, most commonly known for usage in Illumina-MiSeq sample sheet
 files. This library provides an interface for reading, writing, and
 manipulating sections of a CSV file as individual text file objects.
@@ -41,7 +39,7 @@ SQL database in a single, human readable file.
 
 Here's a simplified example of a multi-CSV file:
 
-```plaintext
+```csv
 [section1]
 header1,header2,header3
 value1,value2,value3
