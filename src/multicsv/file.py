@@ -1,6 +1,7 @@
 
 from typing import TextIO, Optional, Type, List, MutableMapping, Iterator
 import shutil
+import os
 from .subtextio import SubTextIO
 from .exceptions import OpOnClosedCSVFileError, CSVFileBaseIOClosed, \
     SectionNotFound
@@ -107,6 +108,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
 
     def __init__(self, file: TextIO):
         self._initialized = False
+        self._need_flush = False
         self._file = file
         self._closed = self._file.closed
         self._sections: List[MultiCSVSection] = []
@@ -132,9 +134,11 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         for i, item in enumerate(self._sections):
             if item.name == key:
                 self._sections[i] = make_section()
+                self._need_flush = True
                 return
 
         self._sections.append(make_section())
+        self._need_flush = True
 
     def __delitem__(self, key: str) -> None:
         self._check_closed()
@@ -150,6 +154,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                                   f"have section named {key!r}.")
         else:
             del self._sections[i]
+            self._need_flush = True
 
     def __iter__(self) -> Iterator[str]:
         self._check_closed()
@@ -196,12 +201,16 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         if self._file.closed:
             raise CSVFileBaseIOClosed("Base file is closed in flush.")
 
+        if not self._need_flush:
+            return
+
         if self._closed:
             return
 
         initial_file_pos = self._file.tell()
         try:
             self._write_file()
+            self._need_flush = False
         finally:
             self._file.seek(initial_file_pos)
 
@@ -227,6 +236,11 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                 section = MultiCSVSection(name=current_section,
                                           descriptor=descriptor)
                 self._sections.append(section)
+
+        self._file.seek(0, os.SEEK_END)
+        final_position = self._file.tell()
+        if final_position == 0:
+            return
 
         self._file.seek(0)
         while True:

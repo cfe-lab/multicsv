@@ -17,4 +17,5 @@ def multicsv_open(path: OpenPath,
                   -> Iterator[MultiCSVFile]:
 
     with open(path, mode=mode) as file:
-        yield MultiCSVFile(file)
+        with MultiCSVFile(file) as ret:
+            yield ret
