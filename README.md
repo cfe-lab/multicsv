@@ -32,7 +32,7 @@ manipulating sections of a CSV file as individual text file objects.
 Install the library using pip:
 
 ```bash
-pip install multicsv
+pip install 'git+https://github.com/cfe-lab/multicsv.git'
 ```
 
 ## Usage
