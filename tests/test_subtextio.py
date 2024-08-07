@@ -4,7 +4,7 @@ from typing import TextIO
 import pytest
 import os
 from multicsv.subtextio import SubTextIO
-from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates, EndsBeyondBaseContent, BaseMustBeSeekable
+from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates, EndsBeyondBaseContent, BaseMustBeSeekable, BaseMustBeReadable
 
 
 @pytest.fixture
@@ -447,3 +447,10 @@ def test_not_seekable():
 
     with pytest.raises(BaseMustBeSeekable):
         SubTextIO(file, start=0, end=0)
+
+def test_not_readable():
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(mode="w") as file:
+        with pytest.raises(BaseMustBeReadable):
+            SubTextIO(file, start=0, end=10)
