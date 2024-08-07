@@ -1,7 +1,7 @@
 
 
 class SubTextIOErrror(Exception):
-    """Base class for all cigar-related custom exceptions."""
+    """Base class for all SubTextIO custom exceptions."""
     pass
 
 
