@@ -27,3 +27,7 @@ class BaseMustBeReadable(SubTextIOErrror, ValueError):
 
 class StartsBeyondBaseContent(SubTextIOErrror, ValueError):
     pass
+
+
+class BaseIOClosed(SubTextIOErrror, ValueError):
+    pass

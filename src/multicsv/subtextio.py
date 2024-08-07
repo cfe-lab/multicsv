@@ -4,7 +4,7 @@ import os
 from .exceptions import OpOnClosedError, \
     InvalidWhenceError, InvalidSubtextCoordinates, \
     BaseMustBeReadable, BaseMustBeSeakable, \
-    StartsBeyondBaseContent
+    StartsBeyondBaseContent, BaseIOClosed
 
 
 class SubTextIO(TextIO):
@@ -103,6 +103,14 @@ class SubTextIO(TextIO):
     """
 
     def __init__(self, base_io: TextIO, start: int, end: int):
+        self._initialized = False
+        self._base_io = base_io
+        self._start = start
+        self._end = end
+        self._position = 0  # Position within the SubTextIO
+        self._closed = base_io.closed
+        self._buffer = ""
+
         if end < start or start < 0:
             raise InvalidSubtextCoordinates(
                 f"Invalid range [{start},{end}] passed to SubTextIO.")
@@ -116,13 +124,9 @@ class SubTextIO(TextIO):
             raise BaseMustBeReadable("Base io must be readable"
                                      " if existing content is to be modified.")
 
-        self._base_io = base_io
-        self._start = start
-        self._end = end
-        self._position = 0  # Position within the SubTextIO
-        self._closed = base_io.closed
         self._load()
         self._initial_length = self.buffer_length
+        self._initialized = True
 
     def _load(self) -> None:
         """
@@ -350,3 +354,10 @@ class SubTextIO(TextIO):
                  exc_val: Optional[BaseException],
                  exc_tb: Optional[object]) -> None:
         self.close()
+
+    def __del__(self) -> None:
+        if self._initialized:
+            try:
+                self.close()
+            except BaseIOClosed:
+                pass
