@@ -43,6 +43,24 @@ def test_read_section(simple_csv):
     assert section2.read() == "d,e,f\n4,5,6\n"
 
 
+def test_read_section_from_file(simple_csv, tmp_path):
+    path = tmp_path / "file1.txt"
+    initial_content = simple_csv.read()
+    with open(path, "w") as writer:
+        writer.write(initial_content)
+
+    with open(path, "r") as fd:
+        assert fd.read() == initial_content
+
+    with open(path, "r") as fd:
+        csv_file = MultiCSVFile(fd)
+        section1 = csv_file["section1"]
+        assert section1.read() == "a,b,c\n1,2,3\n"
+
+        section2 = csv_file["section2"]
+        assert section2.read() == "d,e,f\n4,5,6\n"
+
+
 def test_write_section(simple_csv):
     csv_file = MultiCSVFile(simple_csv)
     section3 = io.StringIO("g,h,i\n7,8,9\n")

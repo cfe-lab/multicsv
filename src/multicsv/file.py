@@ -1,5 +1,4 @@
 
-import csv
 from typing import TextIO, Optional, Type, List, MutableMapping, Iterator
 import shutil
 from .subtextio import SubTextIO
@@ -216,13 +215,9 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         self.close()
 
     def _initialize_sections_wrapped(self) -> None:
-        reader = csv.reader(self._file)
-
         current_section: Optional[str] = None
         section_start = 0
         previous_position = 0
-
-        self._file.seek(0)
 
         def end_section() -> None:
             if current_section is not None:
@@ -233,10 +228,20 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                                           descriptor=descriptor)
                 self._sections.append(section)
 
-        for row in reader:
-            current_position = self._file.tell()
-            if row:
+        self._file.seek(0)
+        while True:
+            line = self._file.readline()
+            if not line:
+                break
 
+            current_position = previous_position + len(line)
+
+            if line.endswith("\n"):
+                line = line[:-1]
+
+            row = line.split(",")
+
+            if row:
                 first = row[0]
                 rest = row[1:]
 
