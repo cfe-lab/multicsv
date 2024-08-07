@@ -27,13 +27,32 @@ manipulating sections of a CSV file as individual text file objects.
 - **Integrated Testing:** Includes comprehensive unit tests, covering
   100% of the functionality.
 
-## Installation
+## The Multi-CSV Format
 
-Install the library using pip:
+The multi-CSV format is an extension of the traditional CSV
+(Comma-Separated Values) format that supports dividing a single file
+into multiple independent sections. Each section is demarcated by a
+header enclosed in square brackets, e.g., `[section_name]`.
 
-```bash
-pip install 'git+https://github.com/cfe-lab/multicsv.git'
+Conceptually, this file format provides the ability to store a whole
+SQL database in a single, human readable file.
+
+### Example
+
+Here's a simplified example of a multi-CSV file:
+
+```plaintext
+[section1]
+header1,header2,header3
+value1,value2,value3
+
+[section2]
+headerA,headerB,headerC
+valueA,valueB,valueC
 ```
+
+In the example above, the file contains two sections: `section1` and
+`section2`. Each section has its own headers and rows of data.
 
 ## Usage
 
@@ -98,6 +117,14 @@ print(csv_content.read())
 # [section3]
 # g,h,i
 # 7,8,9
+```
+
+## Installation
+
+Install the library using pip:
+
+```bash
+pip install 'git+https://github.com/cfe-lab/multicsv.git'
 ```
 
 ## Development
