@@ -3,7 +3,7 @@ import io
 import os
 from .exceptions import OpOnClosedError, \
     InvalidWhenceError, InvalidSubtextCoordinates, \
-    BaseMustBeReadable, BaseMustBeSeakable, \
+    BaseMustBeReadable, BaseMustBeSeekable, \
     EndsBeyondBaseContent, BaseIOClosed
 
 
@@ -116,7 +116,7 @@ class SubTextIO(TextIO):
                 f"Invalid range [{start},{end}] passed to SubTextIO.")
 
         if not base_io.seekable():
-            raise BaseMustBeSeakable("Base io must be seekable.")
+            raise BaseMustBeSeekable("Base io must be seekable.")
 
         if end > start and not base_io.readable():
             # TODO: losen this requirement because if we override by

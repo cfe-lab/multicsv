@@ -4,7 +4,7 @@ from typing import TextIO
 import pytest
 import os
 from multicsv.subtextio import SubTextIO
-from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates, EndsBeyondBaseContent
+from multicsv.exceptions import OpOnClosedError, InvalidWhenceError, InvalidSubtextCoordinates, EndsBeyondBaseContent, BaseMustBeSeekable
 
 
 @pytest.fixture
@@ -433,3 +433,17 @@ def test_no_readable_requirement():
         assert not writer.readable()
         with open(writer.name, "r") as reader:
             assert reader.read() == initial_content + " | appendix"
+
+def test_not_seekable():
+    class NonSeekable:
+        @property
+        def closed(self):
+            return False
+
+        def seekable(self):
+            return False
+
+    file = NonSeekable()
+
+    with pytest.raises(BaseMustBeSeekable):
+        SubTextIO(file, start=0, end=0)

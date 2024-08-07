@@ -17,7 +17,7 @@ class InvalidSubtextCoordinates(SubTextIOErrror, ValueError):
     pass
 
 
-class BaseMustBeSeakable(SubTextIOErrror, ValueError):
+class BaseMustBeSeekable(SubTextIOErrror, ValueError):
     pass
 
 
