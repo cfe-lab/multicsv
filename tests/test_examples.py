@@ -60,6 +60,22 @@ def test_write_csv(example_file):
         assert ['section1', 'section2'] == all_sections
 
 
+def test_write_csv_easier(example_file):
+    with multicsv.open(example_file, mode='w+') as csv_file:
+        # Write the CSV content to the file
+        csv_file.section('section1').write("header1,header2,header3\nvalue1,value2,value3\n")
+        csv_file.section('section2').write("header4,header5,header6\nvalue4,value5,value6\n")
+
+        # Read a section using the csv module
+        csv_reader = csv.reader(csv_file['section1'])
+        assert list(csv_reader) == [['header1', 'header2', 'header3'],
+                                    ['value1', 'value2', 'value3']]
+
+        # Get all sections:
+        all_sections = list(csv_file)
+        assert ['section1', 'section2'] == all_sections
+
+
 def test_open_csv():
     # Initialize the MultiCSVFile with a base CSV string
     csv_content = io.StringIO("[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n")

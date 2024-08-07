@@ -2,6 +2,7 @@
 from typing import TextIO, Optional, Type, List, MutableMapping, Iterator
 import shutil
 import os
+import io
 from .subtextio import SubTextIO
 from .exceptions import OpOnClosedCSVFileError, CSVFileBaseIOClosed, \
     SectionNotFound
@@ -121,6 +122,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
 
         for item in self._sections:
             if item.name == key:
+                item.descriptor.seek(0)
                 return item.descriptor
 
         raise SectionNotFound("MultiCSVFile does not "
@@ -173,6 +175,12 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                 return True
 
         return False
+
+    def section(self, name: str) -> TextIO:
+        if name not in self:
+            self[name] = io.StringIO("")
+
+        return self[name]
 
     def close(self) -> None:
         if not self._closed:
