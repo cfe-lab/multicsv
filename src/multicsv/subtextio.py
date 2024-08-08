@@ -104,6 +104,7 @@ class SubTextIO(TextIO):
 
     def __init__(self, base_io: TextIO, start: int, end: int):
         self._initialized = False
+        self._need_flush = False
         self._base_io = base_io
         self._start = start
         self._end = end
@@ -241,10 +242,11 @@ class SubTextIO(TextIO):
 
         pre = self._buffer[:self._position]
         post = self._buffer[self._position + len(s):]
-        self._buffer = pre + s + post
-
         written = len(s)
+
+        self._buffer = pre + s + post
         self._position += written
+        self._need_flush = True
 
         return written
 
@@ -261,6 +263,7 @@ class SubTextIO(TextIO):
             end = size
 
         self._buffer = self._buffer[:end]
+        self._need_flush = True
         return self.buffer_length
 
     def close(self) -> None:
@@ -294,6 +297,9 @@ class SubTextIO(TextIO):
         if self._base_io.closed:
             raise BaseIOClosed("Base io is closed in flush.")
 
+        if not self._need_flush:
+            return
+
         if not self._closed:
             base_initial_position = self._base_io.tell()
             try:
@@ -309,6 +315,7 @@ class SubTextIO(TextIO):
                     self._base_io.write(self._buffer + content_after)
 
                 self._base_io.flush()
+                self._need_flush = False
             finally:
                 self._base_io.seek(base_initial_position)
 

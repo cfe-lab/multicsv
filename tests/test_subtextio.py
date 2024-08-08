@@ -454,3 +454,17 @@ def test_not_readable():
     with tempfile.NamedTemporaryFile(mode="w") as file:
         with pytest.raises(BaseMustBeReadable):
             SubTextIO(file, start=0, end=10)
+
+def test_not_writable(tmp_path):
+    path = tmp_path / "example.csv"
+
+    with path.open("w") as writer:
+        writer.write("hello")
+
+    with path.open("r") as file:
+        with SubTextIO(file, start=2, end=4) as sub_text:
+            assert sub_text.read() == "ll"
+            assert sub_text.read() == ""
+            assert sub_text.read() == ""
+            sub_text.flush()  # should be a noop.
+            sub_text.flush()  # should be a noop.
