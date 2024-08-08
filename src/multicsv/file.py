@@ -1,5 +1,6 @@
 
 from typing import TextIO, Optional, Type, List, MutableMapping, Iterator
+import csv
 import shutil
 import os
 import io
@@ -266,9 +267,8 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             if line.endswith("\n"):
                 line = line[:-1]
 
-            row = line.split(",")
-
-            if row:
+            if line:
+                row = next(csv.reader([line]))
                 first = row[0].strip()
                 rest = row[1:]
 
