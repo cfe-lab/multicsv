@@ -162,7 +162,8 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
     def __iter__(self) -> Iterator[str]:
         self._check_closed()
 
-        return iter(map(lambda x: x.name, self._sections))
+        for section in self._sections:
+            yield section.name
 
     def __len__(self) -> int:
         return len(self._sections)
