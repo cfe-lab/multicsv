@@ -132,7 +132,7 @@ for section in multicsv.open("example.csv"):
 Install the library using pip:
 
 ```bash
-pip install 'git+https://github.com/cfe-lab/multicsv.git'
+pip install multicsv
 ```
 
 ## Development
