@@ -1,11 +1,11 @@
 
 from typing import Union, Literal, TextIO
-import os
+from pathlib import Path
 
 from .file import MultiCSVFile
 
 
-OpenPath = Union[str, os.PathLike[str], int, bytes, os.PathLike[bytes]]
+OpenPath = Union[str, int, bytes, Path]
 
 
 def multicsv_open(path: OpenPath,
