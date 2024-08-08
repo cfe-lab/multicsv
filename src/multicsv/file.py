@@ -156,7 +156,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             raise SectionNotFound("MultiCSVFile does not "
                                   f"have section named {key!r}.")
         else:
-            del self._sections[i]
+            del self._sections[found]
             self._need_flush = True
 
     def __iter__(self) -> Iterator[str]:
