@@ -1,5 +1,7 @@
 import io
 import pytest
+import csv
+from pathlib import Path
 from typing import TextIO
 from multicsv.file import MultiCSVFile
 from multicsv.exceptions import SectionNotFound, CSVFileBaseIOClosed, OpOnClosedCSVFileError
@@ -230,3 +232,18 @@ def test_op_on_closed_via_context(simple_csv):
 
     with pytest.raises(OpOnClosedCSVFileError):
         csv_file["section1"]
+
+
+def test_open_nonpython_encoding(tmp_path: Path):
+
+    csv_content: bytes \
+        = b"[section1]\r\na,b,c\r\n1,2,3\r\n[section2]\r\nd,e,f\r\n4,5,6\r\n"
+
+    temp_file = tmp_path / "file1.csv"
+    with open(temp_file, "wb") as fd:
+        fd.write(csv_content)
+
+    with MultiCSVFile(temp_file.open()) as csv_file:
+        datasection = csv_file["section2"]
+        csvdatasection = csv.DictReader(datasection)
+        assert csvdatasection.fieldnames == ['d', 'e', 'f']

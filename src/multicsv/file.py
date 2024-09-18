@@ -262,7 +262,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             if not line:
                 break
 
-            current_position = previous_position + len(line)
+            current_position = self._file.tell()
 
             if line.endswith("\n"):
                 line = line[:-1]
