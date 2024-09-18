@@ -48,3 +48,7 @@ class CSVFileBaseIOClosed(MultiCSVFileError, ValueError):
 
 class SectionNotFound(MultiCSVFileError, KeyError):
     pass
+
+
+class BrokenTell(MultiCSVFileError, IOError):
+    pass

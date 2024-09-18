@@ -4,7 +4,8 @@ import csv
 from pathlib import Path
 from typing import TextIO
 from multicsv.file import MultiCSVFile
-from multicsv.exceptions import SectionNotFound, CSVFileBaseIOClosed, OpOnClosedCSVFileError
+from multicsv.exceptions import SectionNotFound, CSVFileBaseIOClosed, \
+    OpOnClosedCSVFileError, BrokenTell
 
 
 @pytest.fixture
@@ -234,7 +235,7 @@ def test_op_on_closed_via_context(simple_csv):
         csv_file["section1"]
 
 
-def test_open_nonpython_encoding(tmp_path: Path):
+def test_open_nonpython_encoding(tmp_path: Path) -> None:
 
     csv_content: bytes \
         = b"[section1]\r\na,b,c\r\n1,2,3\r\n[section2]\r\nd,e,f\r\n4,5,6\r\n"
@@ -247,3 +248,24 @@ def test_open_nonpython_encoding(tmp_path: Path):
         datasection = csv_file["section2"]
         csvdatasection = csv.DictReader(datasection)
         assert csvdatasection.fieldnames == ['d', 'e', 'f']
+
+
+def test_no_newline_at_the_end():
+    simple_csv = io.StringIO(
+        "[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6")
+
+    with MultiCSVFile(simple_csv) as csv_file:
+        datasection = csv_file["section2"]
+        csvdatasection = csv.DictReader(datasection)
+        assert csvdatasection.fieldnames == ['d', 'e', 'f']
+
+
+def test_broken_tell(tmp_path: Path) -> None:
+    csv_content = b'[section1]\ra,b,c\r1,2,3\r[section2]\r4,5,6\r'
+
+    temp_file = tmp_path / "file1.csv"
+    with open(temp_file, "wb") as fd:
+        fd.write(csv_content)
+
+    with pytest.raises(BrokenTell):
+        MultiCSVFile(temp_file.open())

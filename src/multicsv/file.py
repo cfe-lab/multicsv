@@ -6,7 +6,7 @@ import os
 import io
 from .subtextio import SubTextIO
 from .exceptions import OpOnClosedCSVFileError, CSVFileBaseIOClosed, \
-    SectionNotFound
+    SectionNotFound, BrokenTell
 from .section import MultiCSVSection
 
 
@@ -263,6 +263,8 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                 break
 
             current_position = self._file.tell()
+            if current_position > final_position:
+                raise BrokenTell("Base file has a broken tell() function.")
 
             if line.endswith("\n"):
                 line = line[:-1]
