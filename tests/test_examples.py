@@ -122,6 +122,23 @@ def test_read_csv2(example_file_2: Path) -> None:
                             ['4', '5', '6', '', '']]
 
 
+def test_dict_read_csv2(example_file_2: Path) -> None:
+    import csv
+
+    with multicsv.open(example_file_2) as mapping:
+        section1_file = mapping["section1"]
+        section1_csv = csv.DictReader(section1_file)
+        section1 = list(section1_csv)
+
+        assert section1 == [{'a': '1', 'b': '2', 'c': '3', None: ['']}]
+
+        section2_file = mapping["section2"]
+        section2_csv = csv.DictReader(section2_file)
+        section2 = list(section2_csv)
+
+        assert section2 == [{'d': '4', 'e': '5', 'f': '6', '': '', None: ['']}]
+
+
 def test_open_csv():
     # Initialize the MultiCSVFile with a base CSV string
     csv_content = io.StringIO("[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n")
