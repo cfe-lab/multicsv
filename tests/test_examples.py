@@ -76,6 +76,33 @@ def test_write_csv_easier(example_file_1):
         assert ['section1', 'section2'] == all_sections
 
 
+@pytest.fixture
+def example_file_2(tmp_path: Path) -> Path:
+    path = tmp_path / "file1.txt"
+    content = """\
+[section1]
+a,b,c
+1,2,3,
+[section2]
+d,e,f,
+4,5,6,,
+"""
+
+    with open(path, "w") as writer:
+        writer.write(content)
+
+    return path
+
+
+def test_readlines2(example_file_2: Path) -> None:
+    with multicsv.open(example_file_2) as mapping:
+        section1 = mapping["section2"].readlines()
+        assert section1 == ['d,e,f,\n', '4,5,6,,\n']
+        section2 = mapping["section1"].readlines()
+        assert section2 == ['a,b,c\n', '1,2,3,\n']
+        pass
+
+
 def test_open_csv():
     # Initialize the MultiCSVFile with a base CSV string
     csv_content = io.StringIO("[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n")
