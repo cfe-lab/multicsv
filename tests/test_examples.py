@@ -103,6 +103,25 @@ def test_readlines2(example_file_2: Path) -> None:
         pass
 
 
+def test_read_csv2(example_file_2: Path) -> None:
+    import csv
+
+    with multicsv.open(example_file_2) as mapping:
+        section1_file = mapping["section1"]
+        section1_csv = csv.reader(section1_file)
+        section1 = list(section1_csv)
+
+        assert section1 == [['a', 'b', 'c'],
+                            ['1', '2', '3', '']]
+
+        section2_file = mapping["section2"]
+        section2_csv = csv.reader(section2_file)
+        section2 = list(section2_csv)
+
+        assert section2 == [['d', 'e', 'f', ''],
+                            ['4', '5', '6', '', '']]
+
+
 def test_open_csv():
     # Initialize the MultiCSVFile with a base CSV string
     csv_content = io.StringIO("[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n")
