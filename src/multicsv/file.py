@@ -266,9 +266,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             if current_position > final_position:
                 raise BrokenTell("Base file has a broken tell() function.")
 
-            if line.endswith("\n"):
-                line = line[:-1]
-
+            line = line.strip()
             if line:
                 row = next(csv.reader([line]))
                 first = row[0].strip()
