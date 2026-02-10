@@ -269,6 +269,9 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
             line = line.strip()
             if line:
                 row = next(csv.reader([line]))
+                if len(row) == 0:
+                    break
+
                 first = row[0].strip()
                 rest = row[1:]
 
