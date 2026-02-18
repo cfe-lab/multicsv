@@ -44,8 +44,8 @@ def make_encoded_csv(encoding: str) -> TextIO:
 a,b,c
 1,2,3
 [section2]
-d,e,f
-4,5,6
+d,e,f,g
+4,5,6,7
 """
 
     binary = content.encode(encoding)
@@ -80,8 +80,8 @@ def test_encoding_whole_content(encoding: str) -> None:
     assert content == """\
 a,b,c
 1,2,3
-d,e,f
-4,5,6
+d,e,f,g
+4,5,6,7
 """
 
 
