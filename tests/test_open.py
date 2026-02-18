@@ -1,5 +1,4 @@
 
-import pytest
 import io
 from multicsv.open import multicsv_open
 
