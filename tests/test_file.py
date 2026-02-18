@@ -57,7 +57,7 @@ h,i
 
 
 # Get the list of currently supported encodings from the encodings module, and test them all.
-ENCODINGS = tuple(encodings.aliases.aliases.values())
+ENCODINGS = tuple(sorted(set(encodings.aliases.aliases.values())))
 
 def try_encode(encoding: str) -> bool:
     try:
