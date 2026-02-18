@@ -51,7 +51,7 @@ def test_open_write(tmp_path):
     path = tmp_path / "file2.txt"
 
     # Writing sections using multicsv_open
-    with multicsv_open(path, "wt") as csv_file:
+    with multicsv_open(path, "w") as csv_file:
         csv_file["section1"] = io.StringIO("a,b,c\n1,2,3\n")
         csv_file["section2"] = io.StringIO("d,e,f\n4,5,6\n")
         # csv_file.flush()
@@ -76,7 +76,7 @@ a,b,c
         writer.write(initial_content)
 
     # Appending new sections using multicsv_open
-    with multicsv_open(path, "a+t") as csv_file:
+    with multicsv_open(path, "a+") as csv_file:
         csv_file["section2"] = io.StringIO("d,e,f\n4,5,6\n")
 
     # Validate the appended content

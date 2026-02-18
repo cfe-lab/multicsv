@@ -3,44 +3,41 @@ import io
 import pytest
 import csv
 from pathlib import Path
-from typing import TextIO
+from typing import BinaryIO
 from multicsv.file import MultiCSVFile
 from multicsv.exceptions import SectionNotFound, CSVFileBaseIOClosed, \
-    OpOnClosedCSVFileError, BrokenTell
+    OpOnClosedCSVFileError
 
 
 @pytest.fixture
-def simple_csv() -> TextIO:
-    content = """\
-[section1]
+def simple_csv() -> BinaryIO:
+    content = b"""[section1]
 a,b,c
 1,2,3
 [section2]
 d,e,f
 4,5,6
 """
-    return io.StringIO(content)
+    return io.BytesIO(content)
 
 
 @pytest.fixture
-def empty_csv() -> TextIO:
-    return io.StringIO("")
+def empty_csv() -> BinaryIO:
+    return io.BytesIO(b"")
 
 
 @pytest.fixture
-def no_section_csv() -> TextIO:
-    content = """\
-a,b,c
+def no_section_csv() -> BinaryIO:
+    content = b"""a,b,c
 1,2,3
 d,e,f
 4,5,6
 """
-    return io.StringIO(content)
+    return io.BytesIO(content)
 
 
-def make_encoded_csv(encoding: str) -> TextIO:
-    content = """\
-[section1]
+def make_encoded_csv(encoding: str) -> BinaryIO:
+    content = """[section1]
 a,b,c
 1,2,3
 [section2]
@@ -52,8 +49,7 @@ h,i
 """
 
     binary = content.encode(encoding)
-    # Return as a TextIO, but not StringIO because that one only supports UTF-8.
-    return io.TextIOWrapper(io.BytesIO(binary), encoding=encoding)
+    return io.BytesIO(binary)
 
 
 # Get the list of currently supported encodings from the encodings module, and test them all.
@@ -68,12 +64,11 @@ def try_encode(encoding: str) -> bool:
 
 TEXT_ENCODINGS = tuple(encoding for encoding in ENCODINGS if try_encode(encoding))
 
-@pytest.mark.skip(reason="Currently fails")
 @pytest.mark.parametrize("encoding", TEXT_ENCODINGS)
 def test_encoding_whole_content(encoding: str) -> None:
     content = ""
 
-    with MultiCSVFile(make_encoded_csv(encoding)) as csv_file:
+    with MultiCSVFile(make_encoded_csv(encoding), encoding=encoding) as csv_file:
         sections = list(csv_file)
         assert sections == ['section1', 'section2', 'some third\tsection']
         for section in csv_file:
@@ -102,13 +97,13 @@ def test_read_section(simple_csv):
 def test_read_section_from_file(simple_csv, tmp_path):
     path = tmp_path / "file1.txt"
     initial_content = simple_csv.read()
-    with open(path, "w") as writer:
+    with open(path, "wb") as writer:
         writer.write(initial_content)
 
-    with open(path, "r") as fd:
+    with open(path, "rb") as fd:
         assert fd.read() == initial_content
 
-    with open(path, "r") as fd:
+    with open(path, "rb") as fd:
         csv_file = MultiCSVFile(fd)
         section1 = csv_file["section1"]
         assert section1.read() == "a,b,c\n1,2,3\n"
@@ -124,7 +119,7 @@ def test_write_section(simple_csv):
 
     csv_file.flush()
     simple_csv.seek(0)
-    assert simple_csv.read() == "[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n[section3]\ng,h,i\n7,8,9\n"
+    assert simple_csv.read() == b"[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n[section3]\ng,h,i\n7,8,9\n"
 
 
 def test_delete_section(simple_csv):
@@ -133,7 +128,7 @@ def test_delete_section(simple_csv):
 
     csv_file.flush()
     simple_csv.seek(0)
-    assert simple_csv.read() == "[section2]\nd,e,f\n4,5,6\n"
+    assert simple_csv.read() == b"[section2]\nd,e,f\n4,5,6\n"
 
 
 def test_iterate_sections(simple_csv):
@@ -200,7 +195,7 @@ def test_update_existing_section(simple_csv):
 
     csv_file.flush()
     simple_csv.seek(0)
-    expected_content = "[section1]\nnew,data\n[section2]\nd,e,f\n4,5,6\n"
+    expected_content = b"[section1]\nnew,data\n[section2]\nd,e,f\n4,5,6\n"
     assert simple_csv.read() == expected_content
 
 
@@ -222,7 +217,7 @@ def test_multiple_writes_with_flush(simple_csv):
     csv_file.flush()
 
     simple_csv.seek(0)
-    expected_content = "[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n[section3]\nx,y,z\n10,11,12\n[section4]\np,q,r\n13,14,15\n"
+    expected_content = b"[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n[section3]\nx,y,z\n10,11,12\n[section4]\np,q,r\n13,14,15\n"
     assert simple_csv.read() == expected_content
 
 
@@ -254,13 +249,13 @@ def test_section_not_found_for_deleted_section(simple_csv):
 
 
 @pytest.mark.parametrize("initial_content, expected_sections", [
-    ("[first_section]\na,b,c\n1,2,3\n[second_section]\nd,e,f\n4,5,6\n",
+    (b"[first_section]\na,b,c\n1,2,3\n[second_section]\nd,e,f\n4,5,6\n",
      ["first_section", "second_section"]),
-    ("", []),
-    ("[lonely_section]\ng,h,i\n7,8,9\n", ["lonely_section"]),
+    (b"", []),
+    (b"[lonely_section]\ng,h,i\n7,8,9\n", ["lonely_section"]),
 ])
 def test_various_initial_contents(initial_content, expected_sections):
-    file = io.StringIO(initial_content)
+    file = io.BytesIO(initial_content)
     csv_file = MultiCSVFile(file)
     assert list(iter(csv_file)) == expected_sections
 
@@ -297,28 +292,17 @@ def test_open_nonpython_encoding(tmp_path: Path) -> None:
     with open(temp_file, "wb") as fd:
         fd.write(csv_content)
 
-    with MultiCSVFile(temp_file.open()) as csv_file:
+    with MultiCSVFile(temp_file.open("rb")) as csv_file:
         datasection = csv_file["section2"]
         csvdatasection = csv.DictReader(datasection)
         assert csvdatasection.fieldnames == ['d', 'e', 'f']
 
 
 def test_no_newline_at_the_end():
-    simple_csv = io.StringIO(
-        "[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6")
+    simple_csv = io.BytesIO(
+        b"[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6")
 
     with MultiCSVFile(simple_csv) as csv_file:
         datasection = csv_file["section2"]
         csvdatasection = csv.DictReader(datasection)
         assert csvdatasection.fieldnames == ['d', 'e', 'f']
-
-
-def test_broken_tell(tmp_path: Path) -> None:
-    csv_content = b'[section1]\ra,b,c\r1,2,3\r[section2]\r4,5,6\r'
-
-    temp_file = tmp_path / "file1.csv"
-    with open(temp_file, "wb") as fd:
-        fd.write(csv_content)
-
-    with pytest.raises(BrokenTell):
-        MultiCSVFile(temp_file.open())
