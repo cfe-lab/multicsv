@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import os
+from pathlib import Path
 
 import pytest
 
@@ -76,25 +77,88 @@ class TestConstruction:
 
 
 class TestCapabilities:
-    def test_readable(self) -> None:
-        _, sub = make(b"x", 0, 1)
-        assert sub.readable() is True
+    def test_readable_delegates_to_base(self) -> None:
+        """readable() must reflect base_io capability, not always True."""
+        base = io.BytesIO(b"x")
+        sub = SubBinaryIO(base, 0, 1)
+        assert sub.readable() == base.readable()
 
-    def test_writable(self) -> None:
-        _, sub = make(b"x", 0, 1)
-        assert sub.writable() is True
+    def test_writable_delegates_to_base(self) -> None:
+        """writable() must reflect base_io capability."""
+        base = io.BytesIO(b"x")
+        sub = SubBinaryIO(base, 0, 1)
+        assert sub.writable() == base.writable()
 
-    def test_seekable(self) -> None:
-        _, sub = make(b"x", 0, 1)
-        assert sub.seekable() is True
+    def test_seekable_delegates_to_base(self) -> None:
+        """seekable() must reflect base_io capability."""
+        base = io.BytesIO(b"x")
+        sub = SubBinaryIO(base, 0, 1)
+        assert sub.seekable() == base.seekable()
 
-    def test_name_property(self) -> None:
+    def test_readable_false_for_write_only(self, tmp_path: Path) -> None:
+        """A write-only file-backed SubBinaryIO must report readable=False."""
+        p = tmp_path / "wo.bin"
+        p.write_bytes(b"hello")
+        with open(p, "wb") as f:
+            sub = SubBinaryIO(f, 0, 0)
+            assert sub.readable() is False
+
+    def test_writable_false_for_read_only(self, tmp_path: Path) -> None:
+        """A read-only file-backed SubBinaryIO must report writable=False."""
+        p = tmp_path / "ro.bin"
+        p.write_bytes(b"hello")
+        with open(p, "rb") as f:
+            sub = SubBinaryIO(f, 0, 5)
+            assert sub.writable() is False
+
+    def test_name_without_base_name(self) -> None:
+        """BytesIO has no name attribute; format must still return a string."""
         _, sub = make(b"x", 0, 1)
         assert isinstance(sub.name, str)
+        # Must include the byte offsets
+        assert "0" in sub.name
+        assert "1" in sub.name
 
-    def test_mode_property(self) -> None:
+    def test_name_includes_base_name(self, tmp_path: Path) -> None:
+        """For a real file, name must reflect the underlying file path."""
+        p = tmp_path / "named.bin"
+        p.write_bytes(b"hello")
+        with open(p, "r+b") as f:
+            sub = SubBinaryIO(f, 1, 4)
+            assert str(p) in sub.name
+            # Offsets also present
+            assert "1" in sub.name
+            assert "4" in sub.name
+
+    def test_mode_inherits_from_base_bytesio(self) -> None:
+        """BytesIO has no mode; mode must be derived from capabilities."""
         _, sub = make(b"x", 0, 1)
-        assert isinstance(sub.mode, str)
+        m = sub.mode
+        assert isinstance(m, str)
+        assert 'b' in m
+
+    def test_mode_inherits_from_base_file(self, tmp_path: Path) -> None:
+        """Real file mode must propagate (with 'b' added if necessary)."""
+        p = tmp_path / "mode.bin"
+        p.write_bytes(b"hello")
+        with open(p, "r+b") as f:
+            sub = SubBinaryIO(f, 0, 5)
+            assert 'b' in sub.mode
+            assert 'r' in sub.mode
+
+    def test_mode_read_only_file(self, tmp_path: Path) -> None:
+        p = tmp_path / "ro.bin"
+        p.write_bytes(b"hello")
+        with open(p, "rb") as f:
+            sub = SubBinaryIO(f, 0, 5)
+            assert sub.mode == "rb"
+
+    def test_mode_write_only_file(self, tmp_path: Path) -> None:
+        p = tmp_path / "wo.bin"
+        p.write_bytes(b"hello")
+        with open(p, "wb") as f:
+            sub = SubBinaryIO(f, 0, 0)
+            assert sub.mode == "wb"
 
     def test_is_buffered_io_base(self) -> None:
         _, sub = make(b"x", 0, 1)

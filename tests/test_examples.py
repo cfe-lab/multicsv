@@ -44,7 +44,7 @@ def test_read_csv(example_file_1: Path) -> None:
 
 
 def test_write_csv(example_file_1):
-    with multicsv.open(example_file_1, mode='w+b') as csv_file:
+    with multicsv.open(example_file_1, mode='w+') as csv_file:
         # Write the CSV content to the file
         csv_file['section1'] = io.StringIO("header1,header2,header3\nvalue1,value2,value3\n")
         csv_file['section2'] = io.StringIO("header4,header5,header6\nvalue4,value5,value6\n")
@@ -61,7 +61,7 @@ def test_write_csv(example_file_1):
 
 
 def test_write_csv_easier(example_file_1):
-    with multicsv.open(example_file_1, mode='w+b') as csv_file:
+    with multicsv.open(example_file_1, mode='w+') as csv_file:
         # Write the CSV content to the file
         csv_file.section('section1').write("header1,header2,header3\nvalue1,value2,value3\n")
         csv_file.section('section2').write("header4,header5,header6\nvalue4,value5,value6\n")

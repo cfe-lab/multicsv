@@ -304,49 +304,58 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
 
     def _initialize_sections_text(self) -> None:
         """Fallback for encodings whose newline is not the single byte 0x0a
-        (EBCDIC, UTF-16, UTF-32, …).  Reads the whole file, decodes to text,
-        and stores each section as an io.StringIO."""
+        (EBCDIC, UTF-16, UTF-32, …).  Wraps the file in a TextIOWrapper to
+        iterate line by line without loading everything into memory at once,
+        then stores each section as an io.StringIO.
+
+        TextIOWrapper is detached (not closed) at the end so that *self._file*
+        remains open for subsequent operations.
+        """
         self._file.seek(0)
-        raw = self._file.read()
-        if not raw:
-            return
+        wrapper = io.TextIOWrapper(
+            self._file,
+            encoding=self._encoding,
+            errors='replace',
+            line_buffering=False,
+        )
+        try:
+            current_section: Optional[str] = None
+            section_lines: List[str] = []
 
-        full_text = raw.decode(self._encoding, errors='replace')
-        current_section: Optional[str] = None
-        section_lines: List[str] = []
+            for line in wrapper:
+                stripped = line.strip()
+                if stripped:
+                    row = next(csv.reader([stripped]))
+                    if len(row) == 0:
+                        break
 
-        for line in full_text.splitlines(keepends=True):
-            stripped = line.strip()
-            if stripped:
-                row = next(csv.reader([stripped]))
-                if len(row) == 0:
-                    break
+                    first = row[0].strip()
+                    rest = row[1:]
 
-                first = row[0].strip()
-                rest = row[1:]
+                    if first.startswith("[") and \
+                       first.endswith("]") and \
+                       all(not x for x in rest):
 
-                if first.startswith("[") and \
-                   first.endswith("]") and \
-                   all(not x for x in rest):
+                        if current_section is not None:
+                            self._sections.append(MultiCSVSection(
+                                name=current_section,
+                                descriptor=io.StringIO(
+                                    "".join(section_lines)),
+                            ))
+                        current_section = first[1:-1]
+                        section_lines = []
+                        continue
 
-                    if current_section is not None:
-                        self._sections.append(MultiCSVSection(
-                            name=current_section,
-                            descriptor=io.StringIO(
-                                "".join(section_lines)),
-                        ))
-                    current_section = first[1:-1]
-                    section_lines = []
-                    continue
+                if current_section is not None:
+                    section_lines.append(line)
 
             if current_section is not None:
-                section_lines.append(line)
-
-        if current_section is not None:
-            self._sections.append(MultiCSVSection(
-                name=current_section,
-                descriptor=io.StringIO("".join(section_lines)),
-            ))
+                self._sections.append(MultiCSVSection(
+                    name=current_section,
+                    descriptor=io.StringIO("".join(section_lines)),
+                ))
+        finally:
+            wrapper.detach()  # release self._file without closing it
 
     def _initialize_sections(self) -> None:
         if not self._file.readable():

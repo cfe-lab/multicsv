@@ -81,36 +81,65 @@ class SubBinaryIO(io.BufferedIOBase):
 
     @property
     def name(self) -> str:
-        """Nominal name of this byte-range view.
+        """Nominal name that includes the underlying *base_io* name.
 
-        Returns a fixed string since the view has no file-system path of its
-        own.  The property exists to satisfy the ``typing.IO[bytes]`` protocol
-        required by ``io.TextIOWrapper``.
+        Formats as ``"<SubBinaryIO of <name> [start:end]>"`` when *base_io*
+        exposes a ``name`` attribute (real files, named streams), or
+        ``"<SubBinaryIO [start:end]>"`` otherwise (e.g. ``BytesIO``).
+        The property satisfies the ``typing.IO[bytes]`` protocol required by
+        ``io.TextIOWrapper``.
         """
-        return "<SubBinaryIO>"
+        base_name: object = getattr(self._base_io, 'name', None)
+        if base_name is not None:
+            return f"<SubBinaryIO of {base_name!r} [{self._start}:{self._end}]>"
+        return f"<SubBinaryIO [{self._start}:{self._end}]>"
 
     @property
     def mode(self) -> str:
-        """Access mode string (always ``'rb+'``).
+        """Access mode string, derived from *base_io*.
 
-        SubBinaryIO supports both reading and writing so ``'rb+'`` is the
-        appropriate description.  The property exists to satisfy the
-        ``typing.IO[bytes]`` protocol required by ``io.TextIOWrapper``.
+        If *base_io* exposes a ``mode`` attribute the value is normalised to
+        a binary mode string (``'t'`` replaced by ``'b'``; ``'b'`` added if
+        absent).  Otherwise the mode is inferred from the capabilities
+        reported by *base_io*:
+
+        * readable **and** writable → ``"rb+"``
+        * writable only             → ``"wb"``
+        * readable only             → ``"rb"``
+
+        The property satisfies the ``typing.IO[bytes]`` protocol required by
+        ``io.TextIOWrapper``.
         """
-        return "rb+"
+        base_mode: str | None = getattr(self._base_io, 'mode', None)
+        if base_mode is not None:
+            m = base_mode.replace('t', '')
+            if 'b' not in m:
+                m += 'b'
+            return m
+        # Fallback: derive from runtime capabilities.
+        r = self._base_io.readable()
+        w = self._base_io.writable()
+        if r and w:
+            return "rb+"
+        if w:
+            return "wb"
+        return "rb"
 
     # ------------------------------------------------------------------ #
     # Capability flags                                                     #
     # ------------------------------------------------------------------ #
 
     def readable(self) -> bool:
-        return True
+        """Return whether *base_io* is readable."""
+        return self._base_io.readable()
 
     def writable(self) -> bool:
-        return True
+        """Return whether *base_io* is writable."""
+        return self._base_io.writable()
 
     def seekable(self) -> bool:
-        return True
+        """Return whether *base_io* is seekable."""
+        return self._base_io.seekable()
 
     # ------------------------------------------------------------------ #
     # Internal helpers                                                     #
