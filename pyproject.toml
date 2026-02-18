@@ -22,7 +22,7 @@ test = [
 ]
 dev = [
     # Dependencies required for development (linting, type checking, etc.)
-    "flake8",
+    "ruff",
     "mypy",
     "bandit",
 ]

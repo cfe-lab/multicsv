@@ -35,7 +35,7 @@ jobs:
         run: pip3 install .[dev]
 
       - name: Run linter
-        run: flake8 ./src
+        run: ruff check
 
   typechecker:
     runs-on: ubuntu-latest
