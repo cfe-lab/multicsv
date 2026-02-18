@@ -75,7 +75,7 @@ def test_encoding_whole_content(encoding: str) -> None:
 
     with MultiCSVFile(make_encoded_csv(encoding)) as csv_file:
         sections = list(csv_file)
-        assert sections == ['section1', 'section2']
+        assert sections == ['section1', 'section2', 'some third\tsection']
         for section in csv_file:
             datasection = csv_file[section]
             content += datasection.read()
