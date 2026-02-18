@@ -1,3 +1,4 @@
+import encodings
 import io
 import pytest
 import csv
@@ -35,6 +36,53 @@ d,e,f
 4,5,6
 """
     return io.StringIO(content)
+
+
+def make_encoded_csv(encoding: str) -> TextIO:
+    content = """\
+[section1]
+a,b,c
+1,2,3
+[section2]
+d,e,f
+4,5,6
+"""
+
+    binary = content.encode(encoding)
+    # Return as a TextIO, but not StringIO because that one only supports UTF-8.
+    return io.TextIOWrapper(io.BytesIO(binary), encoding=encoding)
+
+
+# Get the list of currently supported encodings from the encodings module, and test them all.
+ENCODINGS = tuple(encodings.aliases.aliases.values())
+
+def try_encode(encoding: str) -> bool:
+    try:
+        "hello".encode(encoding).decode(encoding)
+        return True
+    except (LookupError, UnicodeError):
+        return False
+
+TEXT_ENCODINGS = tuple(encoding for encoding in ENCODINGS if try_encode(encoding))
+
+@pytest.mark.skip(reason="Currently fails")
+@pytest.mark.parametrize("encoding", TEXT_ENCODINGS)
+def test_encoding_whole_content(encoding: str) -> None:
+    content = ""
+
+    with MultiCSVFile(make_encoded_csv(encoding)) as csv_file:
+        sections = list(csv_file)
+        assert sections == ['section1', 'section2']
+        for section in csv_file:
+            datasection = csv_file[section]
+            content += datasection.read()
+
+    assert content == """\
+a,b,c
+1,2,3
+d,e,f
+4,5,6
+"""
 
 
 def test_read_section(simple_csv):
