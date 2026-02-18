@@ -46,6 +46,9 @@ a,b,c
 [section2]
 d,e,f,g
 4,5,6,7
+[some third\tsection]
+h,i
+8,9
 """
 
     binary = content.encode(encoding)
@@ -82,6 +85,8 @@ a,b,c
 1,2,3
 d,e,f,g
 4,5,6,7
+h,i
+8,9
 """
 
 
