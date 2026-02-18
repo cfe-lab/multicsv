@@ -1,13 +1,7 @@
 
 name: main
 
-on:
-  push:
-    branches: [ "master", "devel" ]
-  pull_request:
-    branches: [ "master", "devel" ]
-  schedule:
-    - cron: '0 8 * * 2' # Every Tuesday at 8AM.
+on: push
 
 jobs:
   quicktest:
