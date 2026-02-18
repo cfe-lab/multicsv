@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "multicsv"
 version = "1.0.6"
+requires-python = ">=3.8"
 description = "A Python library for handling multi-CSV format."
 readme = "README.md"
 license = "GPL-3.0"
