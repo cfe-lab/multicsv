@@ -44,7 +44,7 @@ def test_read_csv(example_file_1: Path) -> None:
 
 
 def test_write_csv(example_file_1):
-    with multicsv.open(example_file_1, mode='w+') as csv_file:
+    with multicsv.open(example_file_1, mode='w+b') as csv_file:
         # Write the CSV content to the file
         csv_file['section1'] = io.StringIO("header1,header2,header3\nvalue1,value2,value3\n")
         csv_file['section2'] = io.StringIO("header4,header5,header6\nvalue4,value5,value6\n")
@@ -61,7 +61,7 @@ def test_write_csv(example_file_1):
 
 
 def test_write_csv_easier(example_file_1):
-    with multicsv.open(example_file_1, mode='w+') as csv_file:
+    with multicsv.open(example_file_1, mode='w+b') as csv_file:
         # Write the CSV content to the file
         csv_file.section('section1').write("header1,header2,header3\nvalue1,value2,value3\n")
         csv_file.section('section2').write("header4,header5,header6\nvalue4,value5,value6\n")
@@ -167,8 +167,9 @@ def test_dict_read_csv2(example_file_2: Path) -> None:
 
 
 def test_open_csv():
-    # Initialize the MultiCSVFile with a base CSV string
-    csv_content = io.StringIO("[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n")
+    # Initialize the MultiCSVFile with a base CSV byte stream
+    csv_content = io.BytesIO(
+        b"[section1]\na,b,c\n1,2,3\n[section2]\nd,e,f\n4,5,6\n")
     csv_file = multicsv.wrap(csv_content)
 
     # Accessing a section
@@ -182,14 +183,8 @@ def test_open_csv():
 
     # Verify the new section is added
     csv_content.seek(0)
-    assert csv_content.read() == """\
-[section1]
-a,b,c
-1,2,3
-[section2]
-d,e,f
-4,5,6
-[section3]
-g,h,i
-7,8,9
-"""
+    assert csv_content.read() == (
+        b"[section1]\na,b,c\n1,2,3\n"
+        b"[section2]\nd,e,f\n4,5,6\n"
+        b"[section3]\ng,h,i\n7,8,9\n"
+    )
