@@ -1,11 +1,9 @@
-
-from typing import BinaryIO, TextIO, Optional, Type, List, MutableMapping, \
-    Iterator
+from typing import BinaryIO, TextIO, Optional, Type, List, MutableMapping, Iterator
 import csv
 import io
+import os
 from .subbinaryio import SubBinaryIO
-from .exceptions import OpOnClosedCSVFileError, CSVFileBaseIOClosed, \
-    SectionNotFound
+from .exceptions import OpOnClosedCSVFileError, CSVFileBaseIOClosed, SectionNotFound
 from .section import MultiCSVSection
 
 
@@ -98,8 +96,9 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
       may cause inconsistencies.
     """
 
-    def __init__(self, file: BinaryIO, own: bool = False,
-                 encoding: str = 'utf-8') -> None:
+    def __init__(
+        self, file: BinaryIO, own: bool = False, encoding: str = "utf-8"
+    ) -> None:
         self._initialized = False
         self._need_flush = False
         self._own_file = own
@@ -118,8 +117,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                 item.descriptor.seek(0)
                 return item.descriptor
 
-        raise SectionNotFound("MultiCSVFile does not "
-                              f"have section named {key!r}.")
+        raise SectionNotFound(f"MultiCSVFile does not have section named {key!r}.")
 
     def __setitem__(self, key: str, value: TextIO) -> None:
         self._check_closed()
@@ -146,8 +144,7 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                 break
 
         if found is None:
-            raise SectionNotFound("MultiCSVFile does not "
-                                  f"have section named {key!r}.")
+            raise SectionNotFound(f"MultiCSVFile does not have section named {key!r}.")
         else:
             del self._sections[found]
             self._need_flush = True
@@ -191,10 +188,9 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
 
     def _write_file(self) -> None:
         # Collect all section text BEFORE touching the base file.  Each
-        # descriptor is a TextIOWrapper over a SubBinaryIO that reads directly
-        # from `self._file`; once we seek(0) + truncate() below those bytes
-        # would be gone.  Pre-reading here makes the subsequent rewrite safe.
-        sections_data: List[tuple[str, str]] = []
+        # descriptor reads directly from `self._file`; once we truncate below
+        # those bytes would be gone.  Pre-reading makes the subsequent rewrite safe.
+        sections_data: List[tuple[str, str]] = []  # (name, text) pairs
         for section in self._sections:
             saved_pos = section.descriptor.tell()
             try:
@@ -207,9 +203,22 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         self._file.seek(0)
         self._file.truncate()
 
-        for name, text in sections_data:
-            self._file.write(f"[{name}]\n".encode(self._encoding))
-            self._file.write(text.encode(self._encoding))
+        # Write through a TextIOWrapper so the BOM (for utf-16, utf-32,
+        # utf-8-sig) is emitted exactly once at the start of the file rather
+        # than once per section.  flush() + detach() commit the buffer without
+        # closing self._file.
+        write_wrapper = io.TextIOWrapper(
+            self._file,
+            encoding=self._encoding,
+            line_buffering=False,
+        )
+        try:
+            for name, text in sections_data:
+                write_wrapper.write(f"[{name}]\n")
+                write_wrapper.write(text)
+            write_wrapper.flush()
+        finally:
+            write_wrapper.detach()  # release self._file without closing it
 
     def flush(self) -> None:
         if self._file.closed:
@@ -225,104 +234,117 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
         finally:
             self._file.seek(saved)
 
-    def __enter__(self) -> 'MultiCSVFile':
+    def __enter__(self) -> "MultiCSVFile":
         return self
 
-    def __exit__(self,
-                 exc_type: Optional[Type[BaseException]],
-                 exc_val: Optional[BaseException],
-                 exc_tb: Optional[object]) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[object],
+    ) -> None:
         self.close()
 
-    def _initialize_sections_wrapped(self) -> None:
-        # Binary readline() gives exact byte offsets from tell() with no
-        # opaque codec-state cookies, but only when the encoding maps \n to
-        # the single byte 0x0a.  EBCDIC encodings use 0x25 for \n, and
-        # UTF-16/32 encode \n as a multi-byte sequence; in those cases we
-        # fall back to a whole-file text-decode approach.
+    def _resolved_section_encoding(self) -> str:
+        """Return a BOM-free encoding variant for section ``TextIOWrapper``\\s.
+
+        BOM-aware codec names (``utf-16``, ``utf-32``, ``utf-8-sig``) require
+        a BOM at the very first byte of the stream they wrap.  Section byte
+        ranges start *after* the file-level BOM, so wrapping a
+        ``SubBinaryIO(file, section_start, section_end)`` with one of those
+        codecs raises ``UnicodeError: stream does not start with BOM``.
+
+        This method reads the first four bytes of the file once to identify
+        the byte-order mark actually present, and returns the corresponding
+        BOM-free variant (e.g. ``utf-16-le``, ``utf-32-be``, ``utf-8``).
+        For encodings that never use a BOM the original ``self._encoding`` is
+        returned unchanged.
+        """
+        saved = self._file.tell()
         try:
-            newline_byte = '\n'.encode(self._encoding)
-        except (LookupError, UnicodeEncodeError):
-            newline_byte = b'\n'
+            bom = self._file.read(4)
+        finally:
+            self._file.seek(saved)
+        # Check utf-32 before utf-16: the UTF-32-LE BOM (\xff\xfe\x00\x00)
+        # starts with the same two bytes as the UTF-16-LE BOM.
+        if bom[:4] == b'\xff\xfe\x00\x00':
+            return 'utf-32-le'
+        if bom[:4] == b'\x00\x00\xfe\xff':
+            return 'utf-32-be'
+        if bom[:2] == b'\xff\xfe':
+            return 'utf-16-le'
+        if bom[:2] == b'\xfe\xff':
+            return 'utf-16-be'
+        if bom[:3] == b'\xef\xbb\xbf':
+            return 'utf-8'
+        return self._encoding
 
-        if newline_byte == b'\n':
-            self._initialize_sections_binary()
-        else:
-            self._initialize_sections_text()
+    def _initialize_sections_wrapped(self) -> None:
+        """Scan the file in text mode to locate section headers, then create
+        each section's descriptor as a plain ``TextIOWrapper`` over a
+        ``SubBinaryIO(file, section_start, section_end)`` with the correct
+        byte boundaries.  No section content is loaded into memory during
+        initialisation.
 
-    def _initialize_sections_binary(self) -> None:
-        """Section detection via binary readline + byte-offset SubBinaryIO."""
+        **How byte offsets are obtained from text-mode scanning**
+
+        ``TextIOWrapper.tell()`` returns an opaque cookie, not a raw byte
+        offset.  However ``TextIOWrapper.seek(cookie)`` calls
+        ``buffer.seek(raw_byte_offset)`` internally, which advances the
+        underlying ``SubBinaryIO`` (``sub``) to the exact byte position
+        encoded in the cookie.  Reading ``sub.tell()`` afterwards gives the
+        plain integer boundary needed to create section ``SubBinaryIO``
+        objects::
+
+            cookie = wrapper.tell()
+            wrapper.seek(cookie)    # sub is now at the right byte position
+            byte_pos = sub.tell()   # plain integer — always correct
+
+        This works for every encoding, including stateful codecs.
+
+        **Why section wrappers use a BOM-free encoding**
+
+        Section data does not start at byte 0 of the file, so the file-level
+        BOM is not present in the section's byte range.
+        ``_resolved_section_encoding()`` reads the BOM once and returns the
+        appropriate byte-order-specific variant (``utf-16-le``, etc.) so that
+        each section ``TextIOWrapper`` starts reading without expecting a BOM.
+        """
+        self._file.seek(0, os.SEEK_END)
+        file_size = self._file.tell()
         self._file.seek(0)
-        current_section: Optional[str] = None
-        section_start = 0  # byte offset where current section's data begins
 
-        while True:
-            line_start: int = self._file.tell()
-            line_bytes: bytes = self._file.readline()
+        section_enc = self._resolved_section_encoding()
 
-            if not line_bytes:
-                # EOF – close out the last section.
-                if current_section is not None:
-                    self._sections.append(MultiCSVSection(
-                        name=current_section,
-                        descriptor=io.TextIOWrapper(
-                            SubBinaryIO(self._file, section_start, line_start),
-                            encoding=self._encoding,
-                        ),
-                    ))
-                break
+        sub = SubBinaryIO(self._file, 0, file_size)
+        wrapper = io.TextIOWrapper(sub, encoding=self._encoding, errors='replace')
 
-            line_text = line_bytes.decode(self._encoding,
-                                          errors='replace').strip()
-            if line_text:
-                row = next(csv.reader([line_text]))
-                if len(row) == 0:
-                    break
+        def byte_offset() -> int:
+            """Return sub's current byte position, synced from wrapper."""
+            cookie = wrapper.tell()
+            wrapper.seek(cookie)
+            return sub.tell()
 
-                first = row[0].strip()
-                rest = row[1:]
+        try:
+            current_section: Optional[str] = None
+            section_start = 0
 
-                if first.startswith("[") and \
-                   first.endswith("]") and \
-                   all(not x for x in rest):
+            while True:
+                line_start = byte_offset()
+                line = wrapper.readline()
 
-                    # Close the previous section (data ran from
-                    # section_start up to – but not including – this
-                    # header line).
+                if not line:
+                    # EOF – close out the last open section.
                     if current_section is not None:
                         self._sections.append(MultiCSVSection(
                             name=current_section,
                             descriptor=io.TextIOWrapper(
-                                SubBinaryIO(self._file,
-                                            section_start, line_start),
-                                encoding=self._encoding,
+                                SubBinaryIO(self._file, section_start, line_start),
+                                encoding=section_enc,
                             ),
                         ))
-                    current_section = first[1:-1]
-                    # Section data starts right after the header line.
-                    section_start = self._file.tell()
+                    break
 
-    def _initialize_sections_text(self) -> None:
-        """Fallback for encodings whose newline is not the single byte 0x0a
-        (EBCDIC, UTF-16, UTF-32, …).  Wraps the file in a TextIOWrapper to
-        iterate line by line without loading everything into memory at once,
-        then stores each section as an io.StringIO.
-
-        TextIOWrapper is detached (not closed) at the end so that *self._file*
-        remains open for subsequent operations.
-        """
-        self._file.seek(0)
-        wrapper = io.TextIOWrapper(
-            self._file,
-            encoding=self._encoding,
-            errors='replace',
-            line_buffering=False,
-        )
-        try:
-            current_section: Optional[str] = None
-            section_lines: List[str] = []
-
-            for line in wrapper:
                 stripped = line.strip()
                 if stripped:
                     row = next(csv.reader([stripped]))
@@ -332,30 +354,25 @@ class MultiCSVFile(MutableMapping[str, TextIO]):
                     first = row[0].strip()
                     rest = row[1:]
 
-                    if first.startswith("[") and \
-                       first.endswith("]") and \
-                       all(not x for x in rest):
-
+                    if (
+                        first.startswith('[')
+                        and first.endswith(']')
+                        and all(not x for x in rest)
+                    ):
+                        # Close the previous section.
                         if current_section is not None:
                             self._sections.append(MultiCSVSection(
                                 name=current_section,
-                                descriptor=io.StringIO(
-                                    "".join(section_lines)),
+                                descriptor=io.TextIOWrapper(
+                                    SubBinaryIO(self._file, section_start, line_start),
+                                    encoding=section_enc,
+                                ),
                             ))
                         current_section = first[1:-1]
-                        section_lines = []
-                        continue
-
-                if current_section is not None:
-                    section_lines.append(line)
-
-            if current_section is not None:
-                self._sections.append(MultiCSVSection(
-                    name=current_section,
-                    descriptor=io.StringIO("".join(section_lines)),
-                ))
+                        # Section data starts right after this header line.
+                        section_start = byte_offset()
         finally:
-            wrapper.detach()  # release self._file without closing it
+            wrapper.detach()  # release sub / self._file without closing them
 
     def _initialize_sections(self) -> None:
         if not self._file.readable():
